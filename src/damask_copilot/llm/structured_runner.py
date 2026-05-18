@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -74,5 +75,11 @@ class StructuredLLMRunner:
             return self._client
         from openai import OpenAI
 
-        self._client = OpenAI()
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "OPENAI_API_KEY is missing in the current process environment. "
+                "Export it in the same shell before running DAMASK Copilot with --llm."
+            )
+        self._client = OpenAI(api_key=api_key)
         return self._client

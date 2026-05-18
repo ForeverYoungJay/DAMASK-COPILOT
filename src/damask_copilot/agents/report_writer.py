@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from damask_copilot.agents.base import BaseAgent
@@ -9,47 +10,62 @@ from damask_copilot.schemas.research_state import ResearchState
 
 
 class ReportWriterAgent(BaseAgent):
-    """Write a markdown report from the deterministic research state."""
+    """Write a markdown report from the research state."""
 
     name = "report_writer"
 
     def run(self, state: ResearchState) -> ResearchState:
         report_path = self._resolve_report_path(state)
         report_path.parent.mkdir(parents=True, exist_ok=True)
+        self.add_trace(state, "report_written", {"report_path": str(report_path)})
 
-        material_name = state.material_card.material_name if state.material_card else "Unknown"
-        plan_name = state.simulation_plan.name if state.simulation_plan else "Not planned"
-        checker_ok = state.checker_report.ok if state.checker_report else False
         checker_errors = state.checker_report.errors if state.checker_report else []
+        checker_warnings = state.checker_report.warnings if state.checker_report else []
+        assumptions = state.checker_report.assumptions if state.checker_report else []
+        next_steps = list(state.checker_report.next_steps) if state.checker_report else []
+        if state.critic_report:
+            for item in state.critic_report.next_steps:
+                if item not in next_steps:
+                    next_steps.append(item)
         critique = state.critic_report.summary if state.critic_report else "Critique not available."
         run_message = state.run_report.message if state.run_report else "Runner not reached."
-        post_summary = (
-            state.postprocess_report.summary if state.postprocess_report else "Post-processing not reached."
-        )
+        post_summary = state.postprocess_report.summary if state.postprocess_report else "Post-processing not reached."
 
         markdown = "\n".join(
             [
                 "# DAMASK Copilot Report",
                 "",
-                "## Query",
-                state.user_query,
-                "",
-                "## Goal",
+                "## Research Goal",
+                f"- Query: {state.user_query}",
                 f"- Objective: {state.goal.objective if state.goal else 'Unknown'}",
                 f"- Material system: {state.goal.material_system if state.goal else 'Unknown'}",
                 f"- Dry run: {state.dry_run}",
+                f"- Use LLM: {state.use_llm}",
                 "",
-                "## Material",
-                f"- Selected material: {material_name}",
-                f"- Material id: {state.selected_material_key or 'Unknown'}",
+                "## Material Card",
+            ]
+            + self._material_lines(state)
+            + [
                 "",
-                "## Plan",
-                f"- Plan name: {plan_name}",
-                f"- Workspace: {state.simulation_plan.workspace if state.simulation_plan else 'Unknown'}",
+                "## Simulation Plan",
+            ]
+            + self._plan_lines(state)
+            + [
                 "",
-                "## Checker",
-                f"- Passed: {checker_ok}",
+                "## Generated Files",
+            ]
+            + self._generated_file_lines(state)
+            + [
+                "",
+                "## Checker Report",
+                f"- Passed: {state.checker_report.ok if state.checker_report else False}",
                 f"- Errors: {checker_errors or ['None']}",
+                f"- Warnings: {checker_warnings or ['None']}",
+                "",
+                "## Assumptions",
+            ]
+            + ([f"- {item}" for item in assumptions] if assumptions else ["- None recorded"])
+            + [
                 "",
                 "## Runner",
                 f"- Status: {run_message}",
@@ -60,6 +76,11 @@ class ReportWriterAgent(BaseAgent):
                 "## Scientific Critique",
                 critique,
                 "",
+                "## Next Steps",
+            ]
+            + ([f"- {item}" for item in next_steps] if next_steps else ["- Review the generated inputs before enabling execution."])
+            + [
+                "",
                 "## Trace",
             ]
             + [f"- {trace.agent}: {trace.event}" for trace in state.traces]
@@ -69,11 +90,55 @@ class ReportWriterAgent(BaseAgent):
         state.report_markdown = markdown
         state.report_path = str(report_path)
         state.status = "reported"
-        return self.add_trace(state, "report_written", {"report_path": str(report_path)})
+        return state
 
     def _resolve_report_path(self, state: ResearchState) -> Path:
         if state.generated_files and state.generated_files.report_path:
             return Path(state.generated_files.report_path)
         if state.simulation_plan:
-            return Path("workspaces") / state.simulation_plan.workspace / "report.md"
+            return Path("workspaces") / state.simulation_plan.name / "report.md"
         return Path("workspaces") / "damask_copilot_report.md"
+
+    def _material_lines(self, state: ResearchState) -> list[str]:
+        if state.material_card is None:
+            return ["- None"]
+        card = state.material_card
+        summary = {
+            "material_id": card.material_id,
+            "material_name": card.material_name,
+            "crystal_structure": card.crystal_structure,
+            "phase_type": card.phase_type,
+            "confidence": card.confidence,
+            "is_demo_template": card.is_demo_template,
+        }
+        return [
+            f"- Selected material: {card.material_name}",
+            f"- Material id: {card.material_id}",
+            f"- Metadata: `{json.dumps(summary, ensure_ascii=False)}`",
+        ]
+
+    def _plan_lines(self, state: ResearchState) -> list[str]:
+        if state.simulation_plan is None:
+            return ["- None"]
+        plan = state.simulation_plan
+        return [
+            f"- Plan name: {plan.name}",
+            f"- Workspace label: {plan.workspace}",
+            f"- Summary: {plan.summary}",
+            f"- Geometry: {plan.geometry.grid_type}, cells={plan.geometry.cells}, grains={plan.geometry.grains}",
+            f"- Loading: {plan.loading.mode} along {plan.loading.direction}, final_strain={plan.loading.final_strain}, steps={plan.loading.steps}",
+            f"- Outputs: {plan.outputs or ['None']}",
+        ]
+
+    def _generated_file_lines(self, state: ResearchState) -> list[str]:
+        if state.generated_files is None:
+            return ["- None"]
+        files = state.generated_files
+        return [
+            f"- Workspace: {files.workspace_dir}",
+            f"- Material: {files.material_path}",
+            f"- Load: {files.load_path}",
+            f"- Geometry: {files.geometry_path}",
+            f"- Research state: {files.research_state_path}",
+            f"- Report: {files.report_path}",
+        ]

@@ -15,3 +15,7 @@ plastic:
 metadata:
   source: local_demo
   intended_use: smoke_test
+  confidence: medium
+  is_demo_template: true
+  explicit_assumptions:
+    - Demo FCC aluminum parameters are acceptable for smoke-test planning only.

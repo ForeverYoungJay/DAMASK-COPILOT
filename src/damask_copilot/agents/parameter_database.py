@@ -29,14 +29,16 @@ class ParameterDatabaseAgent(BaseAgent):
 
         materials = index_data.get("materials", {})
         selected_key = state.goal.material_system
+        normalized_selected = selected_key.lower()
 
         if selected_key not in materials:
+            lowered_keys = {name.lower(): name for name in materials}
             aliases = {
-                alias: name
+                alias.lower(): name
                 for name, payload in materials.items()
                 for alias in payload.get("aliases", [])
             }
-            selected_key = aliases.get(selected_key, next(iter(materials), ""))
+            selected_key = lowered_keys.get(normalized_selected) or aliases.get(normalized_selected, next(iter(materials), ""))
 
         if not selected_key:
             raise ValueError("No material definitions are available in data/materials/index.yaml.")
@@ -53,6 +55,9 @@ class ParameterDatabaseAgent(BaseAgent):
             crystal_structure=material_data.get("crystal_structure", "unknown"),
             phase_type=material_data.get("phase_type", "unknown"),
             source_path=str(material_path),
+            confidence=material_data.get("metadata", {}).get("confidence", "medium"),
+            explicit_assumptions=material_data.get("metadata", {}).get("explicit_assumptions", []),
+            is_demo_template=bool(material_data.get("metadata", {}).get("is_demo_template", False)),
             parameters=material_data,
         )
         state.status = "material_loaded"

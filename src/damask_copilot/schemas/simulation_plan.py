@@ -31,5 +31,6 @@ class SimulationPlan(BaseModel):
     summary: str = Field(..., min_length=1)
     workspace: str = Field(..., min_length=1)
     material_id: str = Field(..., min_length=1)
+    outputs: list[str] = Field(default_factory=list)
     geometry: GeometrySpec
     loading: LoadingSpec

@@ -46,24 +46,25 @@ class SimulationPlannerAgent(BaseAgent):
             model_name=state.model_name or self.model_name,
         )
         state.simulation_planner_output = parsed
-        workspace = f"{material_slug}_smoke" if state.smoke_test or state.dry_run else f"{material_slug}_study"
+        plan_name = parsed.plan_name
         state.simulation_plan = SimulationPlan(
-            name=parsed.plan_name,
+            name=plan_name,
             summary=parsed.summary,
-            workspace=workspace,
+            workspace=plan_name,
             material_id=material_slug,
+            outputs=parsed.outputs or ["stress_strain_curve"],
             geometry=GeometrySpec(
                 grid_type=parsed.grid_type,
                 cells=self._normalize_cells(parsed.cells),
                 size=self._normalize_size(parsed.size),
-                grains=parsed.grains,
+                grains=min(20, max(1, parsed.grains)),
             ),
             loading=LoadingSpec(
                 mode=parsed.loading_mode,
                 direction=parsed.loading_direction,
-                final_strain=parsed.final_strain,
+                final_strain=min(0.05, max(1.0e-6, parsed.final_strain)),
                 strain_rate=parsed.strain_rate,
-                steps=parsed.steps,
+                steps=min(50, max(1, parsed.steps)),
             ),
         )
         state.status = "plan_created"
@@ -78,13 +79,14 @@ class SimulationPlannerAgent(BaseAgent):
             loading_mode = "uniaxial_compression"
 
         material_slug = state.selected_material_key or state.goal.material_system
-        workspace = f"{material_slug}_smoke"
+        plan_name = f"{material_slug}_smoke_test"
 
         state.simulation_plan = SimulationPlan(
-            name=f"{material_slug}_smoke_test",
+            name=plan_name,
             summary=f"Small deterministic {loading_mode} smoke test for {material_slug}.",
-            workspace=workspace,
+            workspace=plan_name,
             material_id=material_slug,
+            outputs=["stress_strain_curve"],
             geometry=GeometrySpec(
                 grid_type="voronoi",
                 cells=[8, 8, 8],
@@ -103,12 +105,12 @@ class SimulationPlannerAgent(BaseAgent):
         return self.add_trace(
             state,
             "plan_created",
-            {"workspace": workspace, "mode": loading_mode},
+            {"workspace": plan_name, "mode": loading_mode},
         )
 
     @staticmethod
     def _normalize_cells(cells: list[int]) -> list[int]:
-        normalized = [max(1, int(value)) for value in cells[:3]]
+        normalized = [min(16, max(1, int(value))) for value in cells[:3]]
         while len(normalized) < 3:
             normalized.append(8)
         return normalized

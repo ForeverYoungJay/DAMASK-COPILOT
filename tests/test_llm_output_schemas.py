@@ -30,6 +30,7 @@ def test_llm_output_schemas_validate():
         final_strain=0.02,
         strain_rate=1.0e-3,
         steps=5,
+        outputs=["stress_strain_curve"],
     )
     critic = ScientificCriticOutput(
         summary="Preliminary critique complete.",
@@ -41,4 +42,5 @@ def test_llm_output_schemas_validate():
     assert research.material_system == "fcc_al"
     assert knowledge.crystal_structure == "fcc"
     assert planner.steps == 5
+    assert planner.outputs == ["stress_strain_curve"]
     assert critic.limitations[0] == "No result file exists yet."

@@ -25,7 +25,7 @@ def next_node(current: str, state: ResearchState) -> str:
         return "checker"
     if current == "checker":
         if state.dry_run:
-            return "report_writer"
+            return "scientific_critic"
         if state.checker_report and state.checker_report.ok:
             return "runner"
         return "report_writer"

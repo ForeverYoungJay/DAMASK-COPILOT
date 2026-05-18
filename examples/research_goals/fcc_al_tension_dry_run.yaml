@@ -1,0 +1,10 @@
+query: Study FCC aluminum under uniaxial tension
+mode: dry_run
+use_llm: true
+material_system: fcc_al
+objective: Study response under uniaxial tension
+expectations:
+  - conservative_smoke_test_plan
+  - material_card_from_fcc_al_demo
+  - generated_input_files
+  - no_damask_execution

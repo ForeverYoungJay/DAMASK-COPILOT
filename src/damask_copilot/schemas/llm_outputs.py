@@ -36,6 +36,7 @@ class SimulationPlannerOutput(BaseModel):
     final_strain: float = Field(..., gt=0.0)
     strain_rate: float = Field(..., gt=0.0)
     steps: int = Field(..., ge=1)
+    outputs: list[str] = Field(default_factory=list)
 
 
 class ScientificCriticOutput(BaseModel):

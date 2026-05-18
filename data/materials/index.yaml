@@ -3,6 +3,7 @@ materials:
     file: fcc_al_demo.yaml
     aliases:
       - FCC Al
+      - FCC aluminum
       - aluminum
       - aluminium
       - al

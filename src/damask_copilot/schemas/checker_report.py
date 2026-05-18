@@ -13,3 +13,5 @@ class CheckerReport(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     missing_files: list[str] = Field(default_factory=list)
     checked_paths: list[str] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    next_steps: list[str] = Field(default_factory=list)
