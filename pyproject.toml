@@ -12,6 +12,8 @@ dependencies = [
   "mcp",
   "pydantic",
   "pyyaml",
+  "langgraph",
+  "openai",
   "numpy",
   "scipy",
   "h5py",
@@ -19,6 +21,9 @@ dependencies = [
   "vtk",
   "matplotlib",
 ]
+
+[project.scripts]
+damask-copilot = "damask_copilot.cli:main"
 
 [project.optional-dependencies]
 dev = [

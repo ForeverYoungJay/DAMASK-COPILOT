@@ -1,4 +1,4 @@
-"""DAMASK Copilot MCP helpers."""
+"""DAMASK Copilot package."""
 
 __all__ = [
     "__version__",

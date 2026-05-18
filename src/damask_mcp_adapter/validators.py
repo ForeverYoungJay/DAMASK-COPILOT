@@ -37,7 +37,13 @@ def ensure_workspace_write_path(path: str | Path, *, create_parent: bool = True)
     """Resolve a writable path restricted to workspaces/."""
     workspace_root = workspaces_root().resolve()
     candidate = Path(path).expanduser()
-    resolved = (workspace_root / candidate).resolve() if not candidate.is_absolute() else candidate.resolve()
+    if not candidate.is_absolute():
+        parts = candidate.parts
+        if parts and parts[0] == workspace_root.name:
+            candidate = Path(*parts[1:]) if len(parts) > 1 else Path()
+        resolved = (workspace_root / candidate).resolve()
+    else:
+        resolved = candidate.resolve()
     if not is_within_directory(resolved, workspace_root):
         raise ValueError(f"Write path must stay within {workspace_root}.")
     if create_parent:
