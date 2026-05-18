@@ -1,8 +1,0 @@
-homogenization: {SX: null}
-phase: {PlaceholderPhase: null}
-material:
-- constituents:
-  - phase: PlaceholderPhase
-    v: 1.0
-    O: [1.0, 0.0, 0.0, 0.0]
-  homogenization: SX
