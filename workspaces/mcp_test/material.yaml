@@ -1,0 +1,13 @@
+homogenization:
+  SX: {N_constituents: 1}
+phase:
+  Al:
+    lattice: cF
+    mechanical:
+      elastic: {type: Hooke, C_11: 106750000000.0, C_12: 60410000000.0, C_44: 28340000000.0}
+material:
+- homogenization: SX
+  constituents:
+  - phase: Al
+    O: [1.0, 0.0, 0.0, 0.0]
+    v: 1.0

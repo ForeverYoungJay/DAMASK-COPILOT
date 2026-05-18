@@ -1,0 +1,2 @@
+damask_copilot
+damask_mcp_adapter

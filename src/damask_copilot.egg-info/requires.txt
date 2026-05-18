@@ -1,0 +1,12 @@
+mcp
+pydantic
+pyyaml
+numpy
+scipy
+h5py
+pandas
+vtk
+matplotlib
+
+[dev]
+pytest
