@@ -14,7 +14,7 @@ def test_report_writer_writes_expected_sections(tmp_path):
     state = ResearchState(
         user_query="Study FCC aluminum under uniaxial tension",
         dry_run=True,
-        use_llm=True,
+        use_llm=False,
         goal=ResearchGoal(
             user_query="Study FCC aluminum under uniaxial tension",
             material_system="fcc_al",
@@ -66,5 +66,5 @@ def test_report_writer_writes_expected_sections(tmp_path):
     assert "## Generated Files" in text
     assert "## Checker Report" in text
     assert "## Assumptions" in text
-    assert "## Next Steps" in text
+    assert "## Next Recommended Simulations" in text
     assert "report_writer: report_written" in text

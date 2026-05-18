@@ -37,6 +37,8 @@ class ResearchState(BaseModel):
     dry_run: bool = False
     use_llm: bool = False
     smoke_test: bool = False
+    overwrite: bool = False
+    allow_full_run: bool = False
     model_name: str | None = None
     status: str = "initialized"
     selected_material_key: str | None = None

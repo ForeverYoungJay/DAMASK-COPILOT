@@ -1,0 +1,2 @@
+[console_scripts]
+damask-copilot = damask_copilot.cli:main

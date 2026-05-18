@@ -44,11 +44,29 @@ class ScientificCriticAgent(BaseAgent):
             model_name=state.model_name or self.model_name,
         )
         state.scientific_critic_output = parsed
+        strengths = list(parsed.strengths)
+        limitations = list(parsed.limitations)
+        next_steps = list(parsed.next_steps)
+        summary = parsed.summary
+
+        if state.run_report and state.run_report.status == "success":
+            summary = f"Preliminary smoke-test interpretation: {summary}"
+            limitations.append("Numerical smoke-test behavior is not yet a validated physical claim.")
+        if state.material_card and state.material_card.is_demo_template:
+            limitations.append("Demo/template parameters may distort the numerical response.")
+        for item in [
+            "Verify material.yaml with literature parameters.",
+            "Run 16^3 vs 32^3 grid comparison.",
+            "Run parameter sensitivity on tau0/h0/n.",
+            "Compare with experimental/literature stress-strain data.",
+        ]:
+            if item not in next_steps:
+                next_steps.append(item)
         state.critic_report = CriticReport(
-            summary=parsed.summary,
-            strengths=parsed.strengths,
-            limitations=parsed.limitations,
-            next_steps=parsed.next_steps,
+            summary=summary,
+            strengths=strengths,
+            limitations=limitations,
+            next_steps=next_steps,
         )
         state.status = "critic_completed"
         return self.add_trace(state, "critic_completed_llm", self.model_dump(parsed))
@@ -67,13 +85,24 @@ class ScientificCriticAgent(BaseAgent):
             "Replace heuristic goal parsing with model-backed planning once approved.",
         ]
 
-        if state.postprocess_report and not state.postprocess_report.skipped:
-            strengths.append("A result file was available for downstream analysis.")
+        if state.postprocess_report and state.postprocess_report.status == "success":
+            strengths.append("A smoke-test result file was available for downstream analysis.")
+            limitations.append("Numerical smoke-test behavior is not yet a validated physical claim.")
         else:
             limitations.append("No numerical results were available for scientific interpretation.")
+        if state.material_card and state.material_card.is_demo_template:
+            limitations.append("Demo/template parameters may distort the numerical response.")
+        next_steps.extend(
+            [
+                "Verify material.yaml with literature parameters.",
+                "Run 16^3 vs 32^3 grid comparison.",
+                "Run parameter sensitivity on tau0/h0/n.",
+                "Compare with experimental/literature stress-strain data.",
+            ]
+        )
 
         state.critic_report = CriticReport(
-            summary="Preliminary deterministic critique completed.",
+            summary="Preliminary deterministic smoke-test critique completed." if state.run_report and state.run_report.status == "success" else "Preliminary deterministic critique completed.",
             strengths=strengths,
             limitations=limitations,
             next_steps=next_steps,

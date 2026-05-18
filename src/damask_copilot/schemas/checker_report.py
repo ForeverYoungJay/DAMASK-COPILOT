@@ -9,6 +9,7 @@ class CheckerReport(BaseModel):
     """Validation report produced by the checker agent."""
 
     ok: bool
+    status: str = "passed"
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     missing_files: list[str] = Field(default_factory=list)

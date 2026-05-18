@@ -7,6 +7,8 @@ Description-Content-Type: text/markdown
 Requires-Dist: mcp
 Requires-Dist: pydantic
 Requires-Dist: pyyaml
+Requires-Dist: langgraph
+Requires-Dist: openai
 Requires-Dist: numpy
 Requires-Dist: scipy
 Requires-Dist: h5py

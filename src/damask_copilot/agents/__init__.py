@@ -1,7 +1,10 @@
 """Deterministic agent implementations for DAMASK Copilot."""
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.agents.approval_gate import ApprovalGateAgent
 from damask_copilot.agents.damask_input_builder import DAMASKInputBuilderAgent
+from damask_copilot.agents.iteration_decider import IterationDeciderAgent
+from damask_copilot.agents.literature_agent import LiteratureAgent
 from damask_copilot.agents.material_knowledge import MaterialKnowledgeAgent
 from damask_copilot.agents.parameter_database import ParameterDatabaseAgent
 from damask_copilot.agents.postprocessor import PostProcessingAgent
@@ -14,7 +17,10 @@ from damask_copilot.agents.simulation_runner import SimulationRunnerAgent
 
 __all__ = [
     "BaseAgent",
+    "ApprovalGateAgent",
     "DAMASKInputBuilderAgent",
+    "IterationDeciderAgent",
+    "LiteratureAgent",
     "MaterialKnowledgeAgent",
     "ParameterDatabaseAgent",
     "PostProcessingAgent",

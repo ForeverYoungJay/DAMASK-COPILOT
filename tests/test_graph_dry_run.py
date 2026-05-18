@@ -8,6 +8,7 @@ def test_graph_dry_run_writes_report_and_skips_execution():
     state = ResearchState(
         user_query="Study FCC Al under uniaxial tension",
         dry_run=True,
+        overwrite=True,
     )
 
     final_state = run_research_graph(state)

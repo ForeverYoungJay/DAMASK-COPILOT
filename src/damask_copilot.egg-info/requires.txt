@@ -1,6 +1,8 @@
 mcp
 pydantic
 pyyaml
+langgraph
+openai
 numpy
 scipy
 h5py

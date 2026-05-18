@@ -39,6 +39,12 @@ def test_graph_llm_mock_dry_run_writes_report():
                 "limitations": ["No numerical results are available in dry-run mode."],
                 "next_steps": ["Connect real MCP-backed generation later."],
             },
+            "report_writer": {
+                "title": "DAMASK Copilot Report",
+                "executive_summary": "Mock dry-run summary.",
+                "key_points": ["Inputs were planned conservatively."],
+                "next_recommended_simulations": ["Enable MCP-backed generation next."],
+            },
         },
     )
     state = ResearchState(
@@ -46,6 +52,7 @@ def test_graph_llm_mock_dry_run_writes_report():
         dry_run=True,
         use_llm=True,
         smoke_test=True,
+        overwrite=True,
     )
 
     final_state = run_research_graph(state, llm_runner=runner)

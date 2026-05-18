@@ -1,0 +1,5 @@
+query: Study Ni3Al L12 under uniaxial tension
+mode: dry_run
+use_llm: true
+model: gpt-5.5
+max_iterations: 1

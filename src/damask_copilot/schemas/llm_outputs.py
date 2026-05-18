@@ -22,6 +22,13 @@ class MaterialKnowledgeOutput(BaseModel):
     planning_considerations: list[str] = Field(default_factory=list)
 
 
+class LiteratureAgentOutput(BaseModel):
+    """Structured output for lightweight literature-style background notes."""
+
+    literature_notes: list[str] = Field(default_factory=list)
+    evidence_gaps: list[str] = Field(default_factory=list)
+
+
 class SimulationPlannerOutput(BaseModel):
     """Structured output for simulation planning."""
 
@@ -46,3 +53,20 @@ class ScientificCriticOutput(BaseModel):
     strengths: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     next_steps: list[str] = Field(default_factory=list)
+
+
+class IterationDecisionOutput(BaseModel):
+    """Structured output for deciding whether to continue research iterations."""
+
+    continue_research: bool = False
+    rationale: str = Field(..., min_length=1)
+    next_focus: str | None = None
+
+
+class ReportWriterOutput(BaseModel):
+    """Structured output for the final report framing."""
+
+    title: str = Field(..., min_length=1)
+    executive_summary: str = Field(..., min_length=1)
+    key_points: list[str] = Field(default_factory=list)
+    next_recommended_simulations: list[str] = Field(default_factory=list)

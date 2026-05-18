@@ -1,11 +1,10 @@
 from pathlib import Path
 
-from damask_copilot.graph.simple_runner import run_research_graph
+from damask_copilot.graph.runner import run_research_graph
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
-from damask_copilot.schemas.research_state import ResearchState
 
 
-def test_llm_dry_run_mock_generates_inputs_and_report(monkeypatch):
+def test_langgraph_dry_run_mock(monkeypatch):
     def fake_create_material_yaml(path, *args, **kwargs):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         Path(path).write_text("material", encoding="utf-8")
@@ -40,13 +39,17 @@ def test_llm_dry_run_mock_generates_inputs_and_report(monkeypatch):
             "research_manager": {
                 "material_system": "fcc_al",
                 "objective": "Study response under uniaxial tension",
-                "reasoning_summary": "The query names FCC aluminum under tension.",
+                "reasoning_summary": "The query names FCC aluminum under uniaxial tension.",
+            },
+            "literature_agent": {
+                "literature_notes": ["Use a conservative smoke-test before physical interpretation."],
+                "evidence_gaps": ["Literature-calibrated parameters are not loaded in this test."],
             },
             "material_knowledge": {
                 "material_label": "FCC Aluminum Demo",
                 "crystal_structure": "fcc",
-                "knowledge_summary": "Use a conservative smoke-test plan.",
-                "planning_considerations": ["Demo parameters are acceptable for smoke-test planning only."],
+                "knowledge_summary": "FCC aluminum is suitable for a low-cost first smoke test.",
+                "planning_considerations": ["Keep the cell count small.", "Use stress_strain_curve output."],
             },
             "simulation_planner": {
                 "plan_name": "fcc_al_uniaxial_tension_smoke_test",
@@ -63,35 +66,39 @@ def test_llm_dry_run_mock_generates_inputs_and_report(monkeypatch):
                 "outputs": ["stress_strain_curve"],
             },
             "scientific_critic": {
-                "summary": "The dry-run workflow generated conservative inputs without executing DAMASK.",
-                "strengths": ["Input generation completed."],
-                "limitations": ["No numerical results are available in dry-run mode."],
-                "next_steps": ["Review generated files before enabling execution."],
+                "summary": "The setup is appropriate for a dry-run smoke test.",
+                "strengths": ["The plan is conservative."],
+                "limitations": ["No numerical result exists in dry-run mode."],
+                "next_steps": ["Enable smoke-test execution after reviewing the inputs."],
+            },
+            "iteration_decider": {
+                "continue_research": False,
+                "rationale": "One dry-run planning pass is enough for this test.",
+                "next_focus": None,
             },
             "report_writer": {
                 "title": "DAMASK Copilot Report",
-                "executive_summary": "Mock dry-run execution summary.",
-                "key_points": ["All required inputs were generated."],
-                "next_recommended_simulations": ["Review generated files before enabling execution."],
+                "executive_summary": "The graph completed a dry-run planning cycle without executing DAMASK.",
+                "key_points": ["Goal parsed.", "Files generated.", "Checker passed."],
+                "next_recommended_simulations": ["Enable smoke-test execution next."],
             },
         },
     )
 
-    state = ResearchState(
+    final_state = run_research_graph(
         user_query="Study FCC aluminum under uniaxial tension",
-        dry_run=True,
+        mode="dry_run",
         use_llm=True,
-        overwrite=True,
+        model=None,
+        max_iterations=1,
+        allow_overwrite=True,
+        checkpoint=False,
+        llm_runner=runner,
+        stream=False,
     )
 
-    final_state = run_research_graph(state, llm_runner=runner)
-
-    assert final_state.generated_files is not None
-    assert Path(final_state.generated_files.material_path).exists()
-    assert Path(final_state.generated_files.load_path).exists()
-    assert Path(final_state.generated_files.geometry_path).exists()
-    assert Path(final_state.generated_files.research_state_path).exists()
-    assert final_state.run_report is None
-    assert final_state.checker_report is not None
-    assert final_state.checker_report.ok is True
-    assert Path(final_state.report_path).exists()
+    assert final_state["approval_status"] == "not_required"
+    assert final_state["run_report"] is None
+    assert final_state["report_path"] is not None
+    assert Path(final_state["report_path"]).exists()
+    assert any(item["agent"] == "literature_agent" for item in final_state["trace"])

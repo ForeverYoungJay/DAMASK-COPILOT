@@ -56,6 +56,7 @@ class SimulationCheckerAgent(BaseAgent):
         ok = not errors
         state.checker_report = CheckerReport(
             ok=ok,
+            status="passed" if ok else "blocked",
             errors=errors,
             warnings=warnings,
             missing_files=missing_files,

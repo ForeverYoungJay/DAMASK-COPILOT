@@ -26,6 +26,10 @@ class DAMASKInputBuilderAgent(BaseAgent):
             raise ValueError("Simulation plan and material card must be created before generating input files.")
 
         workspace = self.workspace_root / state.simulation_plan.name
+        if workspace.exists() and any(workspace.iterdir()) and not state.overwrite:
+            raise FileExistsError(
+                f"Workspace already exists and is not empty: {workspace}. Use --overwrite to replace generated inputs."
+            )
         workspace.mkdir(parents=True, exist_ok=True)
         results_dir = workspace / "results"
         results_dir.mkdir(parents=True, exist_ok=True)

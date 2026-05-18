@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.llm.prompts import load_prompt
+from damask_copilot.llm.structured_runner import StructuredLLMRunner
+from damask_copilot.schemas.llm_outputs import ReportWriterOutput
 from damask_copilot.schemas.research_state import ResearchState
 
 
@@ -14,11 +17,17 @@ class ReportWriterAgent(BaseAgent):
 
     name = "report_writer"
 
+    def __init__(self, *, use_llm: bool = False, model_name: str | None = None, llm_runner: StructuredLLMRunner | None = None) -> None:
+        self.use_llm = use_llm
+        self.model_name = model_name
+        self.llm_runner = llm_runner
+
     def run(self, state: ResearchState) -> ResearchState:
         report_path = self._resolve_report_path(state)
         report_path.parent.mkdir(parents=True, exist_ok=True)
         self.add_trace(state, "report_written", {"report_path": str(report_path)})
 
+        llm_summary = self._llm_summary(state) if (self.use_llm or state.use_llm) else None
         checker_errors = state.checker_report.errors if state.checker_report else []
         checker_warnings = state.checker_report.warnings if state.checker_report else []
         assumptions = state.checker_report.assumptions if state.checker_report else []
@@ -27,13 +36,23 @@ class ReportWriterAgent(BaseAgent):
             for item in state.critic_report.next_steps:
                 if item not in next_steps:
                     next_steps.append(item)
+        if llm_summary:
+            for item in llm_summary.next_recommended_simulations:
+                if item not in next_steps:
+                    next_steps.append(item)
         critique = state.critic_report.summary if state.critic_report else "Critique not available."
-        run_message = state.run_report.message if state.run_report else "Runner not reached."
-        post_summary = state.postprocess_report.summary if state.postprocess_report else "Post-processing not reached."
 
         markdown = "\n".join(
             [
-                "# DAMASK Copilot Report",
+                f"# {llm_summary.title if llm_summary else 'DAMASK Copilot Report'}",
+                "",
+                "## Executive Summary",
+                llm_summary.executive_summary if llm_summary else "No LLM executive summary was generated.",
+                "",
+                "## Key Points",
+            ]
+            + ([f"- {item}" for item in llm_summary.key_points] if llm_summary and llm_summary.key_points else ["- None"])
+            + [
                 "",
                 "## Research Goal",
                 f"- Query: {state.user_query}",
@@ -68,15 +87,19 @@ class ReportWriterAgent(BaseAgent):
             + [
                 "",
                 "## Runner",
-                f"- Status: {run_message}",
+            ]
+            + self._run_lines(state)
+            + [
                 "",
                 "## Post-processing",
-                f"- Status: {post_summary}",
+            ]
+            + self._postprocess_lines(state)
+            + [
                 "",
                 "## Scientific Critique",
                 critique,
                 "",
-                "## Next Steps",
+                "## Next Recommended Simulations",
             ]
             + ([f"- {item}" for item in next_steps] if next_steps else ["- Review the generated inputs before enabling execution."])
             + [
@@ -142,3 +165,51 @@ class ReportWriterAgent(BaseAgent):
             f"- Research state: {files.research_state_path}",
             f"- Report: {files.report_path}",
         ]
+
+    def _run_lines(self, state: ResearchState) -> list[str]:
+        if state.run_report is None:
+            return ["- Status: Runner not reached."]
+        report = state.run_report
+        return [
+            f"- Status: {report.status}",
+            f"- Message: {report.message or 'None'}",
+            f"- Command: {report.command or 'None'}",
+            f"- Return code: {report.returncode if report.returncode is not None else 'None'}",
+            f"- Log file: {report.log_file or 'None'}",
+            f"- Result files: {report.result_files or ['None']}",
+            f"- Started at: {report.started_at or 'None'}",
+            f"- Finished at: {report.finished_at or 'None'}",
+        ]
+
+    def _postprocess_lines(self, state: ResearchState) -> list[str]:
+        if state.postprocess_report is None:
+            return ["- Status: Post-processing not reached."]
+        report = state.postprocess_report
+        return [
+            f"- Status: {report.status}",
+            f"- Summary: {report.summary}",
+            f"- Result file: {report.result_file or 'None'}",
+            f"- Inspected fields: {report.inspected_fields or ['None']}",
+            f"- Stress-strain CSV: {report.stress_strain_csv or 'None'}",
+            f"- VTK dir: {report.vtk_dir or 'None'}",
+            f"- Warnings: {report.warnings or ['None']}",
+        ]
+
+    def _llm_summary(self, state: ResearchState) -> ReportWriterOutput | None:
+        runner = self.llm_runner or StructuredLLMRunner(model_name=state.model_name or self.model_name)
+        return runner.run_structured(
+            prompt_name="report_writer",
+            system_prompt=load_prompt("report_writer"),
+            user_prompt=(
+                f"User query: {state.user_query}\n"
+                f"Goal: {state.goal}\n"
+                f"Material card: {state.material_card}\n"
+                f"Simulation plan: {state.simulation_plan}\n"
+                f"Checker report: {state.checker_report}\n"
+                f"Run report: {state.run_report}\n"
+                f"Postprocess report: {state.postprocess_report}\n"
+                f"Critic report: {state.critic_report}"
+            ),
+            output_schema=ReportWriterOutput,
+            model_name=state.model_name or self.model_name,
+        )

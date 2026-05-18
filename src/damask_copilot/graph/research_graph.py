@@ -54,7 +54,7 @@ class DamaskResearchGraph:
         def route_after_checker(payload: dict) -> str:
             state = self._coerce_state(payload)
             if state.dry_run:
-                return "report_writer"
+                return "scientific_critic"
             if state.checker_report and state.checker_report.ok:
                 return "runner"
             return "report_writer"
@@ -62,7 +62,7 @@ class DamaskResearchGraph:
         graph.add_conditional_edges(
             "checker",
             route_after_checker,
-            {"report_writer": "report_writer", "runner": "runner"},
+            {"report_writer": "report_writer", "runner": "runner", "scientific_critic": "scientific_critic"},
         )
         graph.add_edge("runner", "postprocessor")
         graph.add_edge("postprocessor", "scientific_critic")
