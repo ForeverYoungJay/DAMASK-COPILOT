@@ -11,6 +11,11 @@ from damask_mcp_adapter.modules.grid_tools import (
     renumber_grid as renumber_grid_impl,
     scale_grid as scale_grid_impl,
 )
+from damask_mcp_adapter.modules.config_material import create_material_yaml as create_material_yaml_impl
+from damask_mcp_adapter.modules.loading import (
+    create_simple_compression_load_yaml as create_simple_compression_load_yaml_impl,
+    create_simple_tension_load_yaml as create_simple_tension_load_yaml_impl,
+)
 from damask_mcp_adapter.modules.material_tools import (
     add_material_entry as add_material_entry_impl,
     create_empty_material_yaml as create_empty_material_yaml_impl,
@@ -62,6 +67,31 @@ def read_yaml_file(path: str) -> dict:
 def validate_yaml_file(path: str) -> dict:
     """Validate that a YAML file can be parsed as a mapping."""
     return validate_yaml_file_impl(path)
+
+
+@mcp.tool()
+def create_simple_tension_load_yaml(path: str, strain_rate: float, final_strain: float, steps: int) -> dict:
+    """Create a simple uniaxial tension grid-solver load case."""
+    return create_simple_tension_load_yaml_impl(path, strain_rate, final_strain, steps)
+
+
+@mcp.tool()
+def create_simple_compression_load_yaml(path: str, strain_rate: float, final_strain: float, steps: int) -> dict:
+    """Create a simple uniaxial compression grid-solver load case."""
+    return create_simple_compression_load_yaml_impl(path, strain_rate, final_strain, steps)
+
+
+@mcp.tool()
+def create_material_yaml(
+    path: str,
+    material_name: str,
+    phase_name: str,
+    lattice: str,
+    elastic: dict,
+    plastic: dict | None = None,
+) -> dict:
+    """Create a basic DAMASK material.yaml with one phase and one constituent."""
+    return create_material_yaml_impl(path, material_name, phase_name, lattice, elastic, plastic)
 
 
 @mcp.tool()

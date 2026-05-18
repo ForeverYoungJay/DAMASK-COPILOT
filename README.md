@@ -6,7 +6,9 @@ Workflow-focused MCP adapters for the local DAMASK 3.0.2 Python source tree.
 
 The project intentionally does not expose every DAMASK symbol as an MCP tool. Instead it wraps the main workflows:
 
+- DAMASK installation and API inspection
 - preprocessing and YAML generation
+- controlled `DAMASK_grid` execution
 - result inspection and export
 - miscellaneous table, utility, and regular-grid helpers
 
@@ -14,9 +16,24 @@ Main adapter package:
 
 - `src/damask_mcp_adapter/`
 
+Compatibility and workflow modules:
+
+- `src/damask_mcp_adapter/api_registry.py`
+- `src/damask_mcp_adapter/modules/core.py`
+- `src/damask_mcp_adapter/modules/config_material.py`
+- `src/damask_mcp_adapter/modules/loading.py`
+- `src/damask_mcp_adapter/modules/grid.py`
+- `src/damask_mcp_adapter/modules/rotation.py`
+- `src/damask_mcp_adapter/modules/result.py`
+- `src/damask_mcp_adapter/modules/mechanics.py`
+- `src/damask_mcp_adapter/modules/tensor.py`
+- `src/damask_mcp_adapter/modules/runner.py`
+
 Thin MCP servers:
 
+- `src/damask_copilot/mcp_servers/damask_core_server.py`
 - `src/damask_copilot/mcp_servers/damask_preprocess_server.py`
+- `src/damask_copilot/mcp_servers/damask_runner_server.py`
 - `src/damask_copilot/mcp_servers/damask_postprocess_server.py`
 - `src/damask_copilot/mcp_servers/damask_misc_server.py`
 
@@ -34,6 +51,7 @@ The current adapter uses confirmed DAMASK APIs including:
 
 - `damask.ConfigMaterial`
 - `damask.YAML`
+- `damask.LoadcaseGrid`
 - `damask.GeomGrid`
 - `damask.Rotation`
 - `damask.Result`
@@ -45,7 +63,16 @@ The current adapter uses confirmed DAMASK APIs including:
 
 The MCP tools are grouped by the official DAMASK processing-tools documentation:
 
+- Core:
+  - `check_damask_installation`
+  - `get_damask_version`
+  - `list_damask_modules`
+  - `inspect_damask_class`
+  - `inspect_damask_function`
 - Pre-processing doc:
+  - `create_simple_tension_load_yaml`
+  - `create_simple_compression_load_yaml`
+  - `create_material_yaml`
   - `validate_yaml_file`
   - `create_empty_material_yaml`
   - `inspect_material_yaml`
@@ -60,6 +87,11 @@ The MCP tools are grouped by the official DAMASK processing-tools documentation:
   - `scale_grid`
   - `renumber_grid`
   - `clean_grid`
+- Runner:
+  - `find_damask_executables`
+  - `run_damask_grid`
+  - `list_workspace_files`
+  - `collect_result_files`
 - Post-processing doc:
   - `inspect_result_file`
   - `list_result_data`
@@ -109,10 +141,22 @@ The adapter imports DAMASK directly from the local source tree at `./damask-3.0.
 
 ## Run MCP Servers
 
+Core:
+
+```bash
+python3 -m damask_copilot.mcp_servers.damask_core_server
+```
+
 Preprocess:
 
 ```bash
 python3 -m damask_copilot.mcp_servers.damask_preprocess_server
+```
+
+Runner:
+
+```bash
+python3 -m damask_copilot.mcp_servers.damask_runner_server
 ```
 
 Postprocess:
@@ -132,6 +176,16 @@ python3 -m damask_copilot.mcp_servers.damask_misc_server
 Example `.codex/config.toml`:
 
 ```toml
+[mcp_servers.damask-core]
+command = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/.venv/bin/python"
+args = ["-m", "damask_copilot.mcp_servers.damask_core_server"]
+cwd = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT"
+startup_timeout_sec = 30
+tool_timeout_sec = 60
+
+[mcp_servers.damask-core.env]
+PYTHONPATH = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/src"
+
 [mcp_servers.damask-preprocess]
 command = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/.venv/bin/python"
 args = ["-m", "damask_copilot.mcp_servers.damask_preprocess_server"]
@@ -140,6 +194,16 @@ startup_timeout_sec = 30
 tool_timeout_sec = 120
 
 [mcp_servers.damask-preprocess.env]
+PYTHONPATH = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/src"
+
+[mcp_servers.damask-runner]
+command = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/.venv/bin/python"
+args = ["-m", "damask_copilot.mcp_servers.damask_runner_server"]
+cwd = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT"
+startup_timeout_sec = 30
+tool_timeout_sec = 3600
+
+[mcp_servers.damask-runner.env]
 PYTHONPATH = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/src"
 
 [mcp_servers.damask-postprocess]
