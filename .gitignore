@@ -1,0 +1,9 @@
+.DS_Store
+.codex/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+workspaces/.mplconfig/
