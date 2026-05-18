@@ -21,16 +21,36 @@ def test_langgraph_final_report_contains_expected_sections(monkeypatch):
         return {"ok": True, "path": path}
 
     monkeypatch.setattr(
-        "damask_copilot.agents.damask_input_builder.create_material_yaml",
-        fake_create_material_yaml,
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.create_material_yaml",
+        lambda self, *, path, **kwargs: fake_create_material_yaml(path),
     )
     monkeypatch.setattr(
-        "damask_copilot.agents.damask_input_builder.create_simple_tension_load_yaml",
-        fake_create_simple_tension_load_yaml,
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.create_material_yaml_from_template",
+        lambda self, *, path, **kwargs: fake_create_material_yaml(path),
     )
     monkeypatch.setattr(
-        "damask_copilot.agents.damask_input_builder.create_voronoi_grid",
-        fake_create_voronoi_grid,
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.create_simple_tension_load_yaml",
+        lambda self, *, path, **kwargs: fake_create_simple_tension_load_yaml(path),
+    )
+    monkeypatch.setattr(
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.create_voronoi_grid",
+        lambda self, *, path, **kwargs: fake_create_voronoi_grid(path),
+    )
+    monkeypatch.setattr(
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.inspect_grid",
+        lambda self, *, path: {"ok": True, "path": path, "material_count": 8},
+    )
+    monkeypatch.setattr(
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.inspect_material_yaml",
+        lambda self, *, path: {"ok": True, "path": path, "material_count": 8},
+    )
+    monkeypatch.setattr(
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.add_material_entry",
+        lambda self, **kwargs: {"ok": True, "path": kwargs["path"], "material_count": 8},
+    )
+    monkeypatch.setattr(
+        "damask_copilot.mcp_clients.damask_preprocess_client.DAMASKPreprocessClient.create_random_orientations",
+        lambda self, *, count, seed=0: [[1.0, 0.0, 0.0, float(i)] for i in range(count)],
     )
 
     runner = StructuredLLMRunner(

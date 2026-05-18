@@ -70,6 +70,7 @@ class SimulationRunnerAgent(BaseAgent):
             geometry="geometry.vti",
             load="load.yaml",
             material="material.yaml",
+            numerics="numerics.yaml" if state.generated_files.numerics_path else None,
             timeout_seconds=3600,
         )
         finished_at = datetime.now(UTC).isoformat()
@@ -90,7 +91,7 @@ class SimulationRunnerAgent(BaseAgent):
         if not result_files:
             collected = self.runner_client.collect_results(workspace=workspace_name)
             result_files = collected.get("files", [])
-        command = self._build_command(run_result)
+        command = self._build_command(run_result, include_numerics=bool(state.generated_files.numerics_path))
         state.run_report = RunReport(
             ok=bool(run_result.get("ok", False)),
             status="success" if run_result.get("ok", False) else "failed",
@@ -112,8 +113,9 @@ class SimulationRunnerAgent(BaseAgent):
         )
 
     @staticmethod
-    def _build_command(run_result: dict) -> str | None:
+    def _build_command(run_result: dict, *, include_numerics: bool) -> str | None:
         executable = run_result.get("executable")
         if not executable:
             return None
-        return f"{executable} --geom geometry.vti --load load.yaml --material material.yaml --workingdir <workspace>"
+        numerics_segment = " --numerics numerics.yaml" if include_numerics else ""
+        return f"{executable} --geom geometry.vti --load load.yaml --material material.yaml{numerics_segment} --workingdir <workspace>"

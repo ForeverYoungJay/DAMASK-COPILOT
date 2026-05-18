@@ -12,6 +12,7 @@ from damask_copilot.schemas.llm_outputs import (
     LiteratureAgentOutput,
     MaterialKnowledgeOutput,
     ReportWriterOutput,
+    ResearchManagerOutput,
     ScientificCriticOutput,
     SimulationPlannerOutput,
 )
@@ -30,11 +31,14 @@ class DamaskResearchState(TypedDict, total=False):
     mode: str
     use_llm: bool
     model: str | None
+    selected_material_key: str | None
     research_goal: ResearchGoal | dict[str, Any] | None
+    research_manager_output: ResearchManagerOutput | dict[str, Any] | None
     literature_notes: list[str]
     material_knowledge: MaterialKnowledgeOutput | dict[str, Any] | None
     material_card: MaterialParameterCard | dict[str, Any] | None
     simulation_plan: SimulationPlan | dict[str, Any] | None
+    simulation_planner_output: SimulationPlannerOutput | dict[str, Any] | None
     workspace: str | None
     generated_files: GeneratedFiles | dict[str, Any] | None
     checker_report: CheckerReport | dict[str, Any] | None
@@ -43,6 +47,8 @@ class DamaskResearchState(TypedDict, total=False):
     run_report: RunReport | dict[str, Any] | None
     postprocess_report: PostprocessReport | dict[str, Any] | None
     critic_report: CriticReport | dict[str, Any] | None
+    scientific_critic_output: ScientificCriticOutput | dict[str, Any] | None
+    report_writer_output: ReportWriterOutput | dict[str, Any] | None
     iteration_decision: IterationDecisionOutput | dict[str, Any] | None
     iteration: int
     max_iterations: int
@@ -68,11 +74,14 @@ def create_initial_state(
         "mode": mode,
         "use_llm": use_llm,
         "model": model,
+        "selected_material_key": None,
         "research_goal": None,
+        "research_manager_output": None,
         "literature_notes": [],
         "material_knowledge": None,
         "material_card": None,
         "simulation_plan": None,
+        "simulation_planner_output": None,
         "workspace": None,
         "generated_files": None,
         "checker_report": None,
@@ -81,6 +90,8 @@ def create_initial_state(
         "run_report": None,
         "postprocess_report": None,
         "critic_report": None,
+        "scientific_critic_output": None,
+        "report_writer_output": None,
         "iteration_decision": None,
         "iteration": 0,
         "max_iterations": max_iterations,
@@ -111,14 +122,18 @@ def legacy_state_from_graph(state: DamaskResearchState) -> ResearchState:
         allow_full_run=bool(state.get("approval_request", {}).get("explicit_approval", False)),
         model_name=state.get("model"),
         goal=_validate_optional(state.get("research_goal"), ResearchGoal),
+        research_manager_output=_validate_optional(state.get("research_manager_output"), ResearchManagerOutput),
+        selected_material_key=state.get("selected_material_key"),
         material_card=_validate_optional(state.get("material_card"), MaterialParameterCard),
         material_knowledge_output=material_knowledge,
         simulation_plan=_validate_optional(state.get("simulation_plan"), SimulationPlan),
+        simulation_planner_output=_validate_optional(state.get("simulation_planner_output"), SimulationPlannerOutput),
         generated_files=_validate_optional(state.get("generated_files"), GeneratedFiles),
         checker_report=_validate_optional(state.get("checker_report"), CheckerReport),
         run_report=_validate_optional(state.get("run_report"), RunReport),
         postprocess_report=_validate_optional(state.get("postprocess_report"), PostprocessReport),
         critic_report=_validate_optional(state.get("critic_report"), CriticReport),
+        scientific_critic_output=_validate_optional(state.get("scientific_critic_output"), ScientificCriticOutput),
         notes=literature_notes,
         traces=traces,
         report_markdown=state.get("final_report"),
@@ -129,16 +144,20 @@ def legacy_state_from_graph(state: DamaskResearchState) -> ResearchState:
 def graph_state_from_legacy(previous: DamaskResearchState, legacy: ResearchState) -> DamaskResearchState:
     """Merge updates from the existing Pydantic state back into the LangGraph state."""
     next_state = dict(previous)
+    next_state["selected_material_key"] = legacy.selected_material_key
     next_state["research_goal"] = legacy.goal
+    next_state["research_manager_output"] = legacy.research_manager_output
     next_state["material_card"] = legacy.material_card
     next_state["material_knowledge"] = legacy.material_knowledge_output or next_state.get("material_knowledge")
     next_state["simulation_plan"] = legacy.simulation_plan
+    next_state["simulation_planner_output"] = legacy.simulation_planner_output
     next_state["workspace"] = legacy.simulation_plan.name if legacy.simulation_plan else next_state.get("workspace")
     next_state["generated_files"] = legacy.generated_files
     next_state["checker_report"] = legacy.checker_report
     next_state["run_report"] = legacy.run_report
     next_state["postprocess_report"] = legacy.postprocess_report
     next_state["critic_report"] = legacy.critic_report
+    next_state["scientific_critic_output"] = legacy.scientific_critic_output
     next_state["report_path"] = legacy.report_path
     next_state["final_report"] = legacy.report_markdown
     next_state["trace"] = [_model_to_dict(item) for item in legacy.traces]

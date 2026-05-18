@@ -12,10 +12,14 @@ class GeneratedFiles(BaseModel):
     geometry_path: str = Field(..., min_length=1)
     load_path: str = Field(..., min_length=1)
     material_path: str = Field(..., min_length=1)
+    numerics_path: str | None = None
     research_state_path: str = Field(..., min_length=1)
     result_path: str = Field(..., min_length=1)
     report_path: str = Field(..., min_length=1)
 
     def required_input_paths(self) -> list[str]:
         """Return the file paths expected before execution."""
-        return [self.geometry_path, self.load_path, self.material_path, self.research_state_path]
+        paths = [self.geometry_path, self.load_path, self.material_path, self.research_state_path]
+        if self.numerics_path:
+            paths.append(self.numerics_path)
+        return paths

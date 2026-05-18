@@ -23,6 +23,7 @@ def run_research_graph(
     approve: bool = False,
     allow_overwrite: bool = False,
     checkpoint: bool = True,
+    thread_id: str | None = None,
     llm_runner: StructuredLLMRunner | None = None,
     agent_overrides: dict[str, Any] | None = None,
     stream: bool = True,
@@ -51,7 +52,7 @@ def run_research_graph(
         llm_runner=llm_runner,
         agent_overrides=agent_overrides,
     )
-    config = {"configurable": {"thread_id": f"damask-copilot-{uuid.uuid4()}"}}
+    config = {"configurable": {"thread_id": thread_id or f"damask-copilot-{uuid.uuid4()}"}}
     if stream:
         for update in app.stream(initial_state, config=config, stream_mode="updates"):
             for node_name, node_update in update.items():

@@ -25,9 +25,18 @@ class ReportWriterAgent(BaseAgent):
     def run(self, state: ResearchState) -> ResearchState:
         report_path = self._resolve_report_path(state)
         report_path.parent.mkdir(parents=True, exist_ok=True)
-        self.add_trace(state, "report_written", {"report_path": str(report_path)})
+        state = self.add_trace(state, "report_written", {"report_path": str(report_path)})
 
-        llm_summary = self._llm_summary(state) if (self.use_llm or state.use_llm) else None
+        llm_summary = None
+        if self.use_llm or state.use_llm:
+            try:
+                llm_summary = self._llm_summary(state)
+            except Exception as exc:
+                state = self.add_trace(
+                    state,
+                    "report_llm_fallback",
+                    {"error": f"{type(exc).__name__}: {exc}"},
+                )
         checker_errors = state.checker_report.errors if state.checker_report else []
         checker_warnings = state.checker_report.warnings if state.checker_report else []
         assumptions = state.checker_report.assumptions if state.checker_report else []
@@ -78,8 +87,8 @@ class ReportWriterAgent(BaseAgent):
                 "",
                 "## Checker Report",
                 f"- Passed: {state.checker_report.ok if state.checker_report else False}",
-                f"- Errors: {checker_errors or ['None']}",
-                f"- Warnings: {checker_warnings or ['None']}",
+                f"- Errors: {', '.join(checker_errors) if checker_errors else 'None'}",
+                f"- Warnings: {', '.join(checker_warnings) if checker_warnings else 'None'}",
                 "",
                 "## Assumptions",
             ]
@@ -161,6 +170,7 @@ class ReportWriterAgent(BaseAgent):
             f"- Workspace: {files.workspace_dir}",
             f"- Material: {files.material_path}",
             f"- Load: {files.load_path}",
+            f"- Numerics: {files.numerics_path or 'None'}",
             f"- Geometry: {files.geometry_path}",
             f"- Research state: {files.research_state_path}",
             f"- Report: {files.report_path}",
@@ -176,7 +186,7 @@ class ReportWriterAgent(BaseAgent):
             f"- Command: {report.command or 'None'}",
             f"- Return code: {report.returncode if report.returncode is not None else 'None'}",
             f"- Log file: {report.log_file or 'None'}",
-            f"- Result files: {report.result_files or ['None']}",
+            f"- Result files: {', '.join(report.result_files) if report.result_files else 'None'}",
             f"- Started at: {report.started_at or 'None'}",
             f"- Finished at: {report.finished_at or 'None'}",
         ]
@@ -189,10 +199,10 @@ class ReportWriterAgent(BaseAgent):
             f"- Status: {report.status}",
             f"- Summary: {report.summary}",
             f"- Result file: {report.result_file or 'None'}",
-            f"- Inspected fields: {report.inspected_fields or ['None']}",
+            f"- Inspected fields: {', '.join(report.inspected_fields) if report.inspected_fields else 'None'}",
             f"- Stress-strain CSV: {report.stress_strain_csv or 'None'}",
             f"- VTK dir: {report.vtk_dir or 'None'}",
-            f"- Warnings: {report.warnings or ['None']}",
+            f"- Warnings: {', '.join(report.warnings) if report.warnings else 'None'}",
         ]
 
     def _llm_summary(self, state: ResearchState) -> ReportWriterOutput | None:

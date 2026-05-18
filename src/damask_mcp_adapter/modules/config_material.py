@@ -49,8 +49,36 @@ def create_material_yaml(
     return inspected
 
 
+def create_material_yaml_from_template(
+    path: str,
+    homogenization: dict[str, Any],
+    phase: dict[str, Any],
+    material: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Create a DAMASK material.yaml from an explicit template."""
+    output_path = ensure_workspace_write_path(path)
+    damask = import_damask()
+    config = damask.ConfigMaterial(
+        {
+            "homogenization": homogenization,
+            "phase": phase,
+            "material": material,
+        }
+    )
+    config.save(output_path)
+    inspected = inspect_material_yaml(str(output_path))
+    inspected["created_from"] = {
+        "mode": "template",
+        "homogenization_count": len(homogenization),
+        "phase_count": len(phase),
+        "material_count": len(material),
+    }
+    return inspected
+
+
 __all__ = [
     "create_material_yaml",
+    "create_material_yaml_from_template",
     "inspect_material_yaml",
     "validate_material_yaml",
 ]

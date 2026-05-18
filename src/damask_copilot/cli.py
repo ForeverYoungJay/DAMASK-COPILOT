@@ -29,6 +29,7 @@ def _add_run_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--no-llm", dest="use_llm", action="store_false", help="Disable LLM-backed planning nodes.")
     parser.add_argument("--model", dest="model_name", help="Override the LLM model name.")
     parser.add_argument("--max-iterations", type=int, default=1, help="Maximum research iterations.")
+    parser.add_argument("--thread-id", help="Reuse a specific LangGraph thread id when checkpointing in-process.")
     parser.add_argument("--overwrite", action="store_true", help="Allow overwriting generated workspaces.")
     parser.add_argument("--approve", action="store_true", help="Approve a full-run execution request.")
     parser.set_defaults(allow_full_run=False, use_llm=False)
@@ -40,6 +41,8 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "research" or (args.command == "graph" and args.graph_command == "run"):
+        if args.approve and not args.allow_full_run:
+            parser.error("--approve can only be used together with --full-run.")
         mode = _resolve_mode(args)
         final_state = run_research_graph(
             user_query=args.query,
@@ -49,6 +52,7 @@ def main() -> int:
             max_iterations=args.max_iterations,
             approve=args.approve,
             allow_overwrite=args.overwrite,
+            thread_id=args.thread_id,
         )
         report_path = final_state.get("report_path") or str(Path("workspaces") / "damask_copilot_report.md")
         print(f"Completed research pipeline. Report: {report_path}")

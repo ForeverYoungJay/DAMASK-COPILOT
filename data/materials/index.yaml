@@ -7,3 +7,17 @@ materials:
       - aluminum
       - aluminium
       - al
+  fcc_cu:
+    file: fcc_cu_demo.yaml
+    aliases:
+      - FCC Cu
+      - FCC copper
+      - copper
+      - cu
+  ni3al_l12:
+    file: ni3al_l12_demo.yaml
+    aliases:
+      - Ni3Al
+      - Ni3Al L12
+      - ni3al
+      - l12

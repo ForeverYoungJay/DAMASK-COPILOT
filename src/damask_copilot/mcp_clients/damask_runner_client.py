@@ -17,6 +17,7 @@ class DAMASKRunnerClient:
         geometry: str,
         load: str,
         material: str,
+        numerics: str | None = None,
         timeout_seconds: int = 3600,
     ) -> dict[str, Any]:
         return run_damask_grid(
@@ -24,6 +25,7 @@ class DAMASKRunnerClient:
             geometry=geometry,
             load=load,
             material=material,
+            numerics=numerics,
             timeout_seconds=timeout_seconds,
         )
 

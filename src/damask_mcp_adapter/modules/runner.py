@@ -98,6 +98,7 @@ def run_damask_grid(
     geometry: str,
     load: str,
     material: str,
+    numerics: str | None = None,
     timeout_seconds: int = 3600,
 ) -> dict[str, Any]:
     """Run DAMASK_grid with workspace-local input files using a safe subprocess call."""
@@ -113,9 +114,12 @@ def run_damask_grid(
         geometry_path = ensure_path_within_workspaces(workspace_dir / geometry)
         load_path = ensure_path_within_workspaces(workspace_dir / load)
         material_path = ensure_path_within_workspaces(workspace_dir / material)
+        numerics_path = ensure_path_within_workspaces(workspace_dir / numerics) if numerics else None
         ensure_existing_file(geometry_path)
         ensure_existing_file(load_path)
         ensure_existing_file(material_path)
+        if numerics_path is not None:
+            ensure_existing_file(numerics_path)
         executable = executables[0]
         command = [
             str(executable),
@@ -128,6 +132,8 @@ def run_damask_grid(
             "--workingdir",
             str(workspace_dir),
         ]
+        if numerics_path is not None:
+            command.extend(["--numerics", str(numerics_path)])
         process = subprocess.run(
             command,
             cwd=workspace_dir,

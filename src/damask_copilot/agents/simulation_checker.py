@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.mcp_clients.damask_preprocess_client import DAMASKPreprocessClient
 from damask_copilot.policies.safety_policy import enforce_basic_safety
 from damask_copilot.policies.simulation_budget import evaluate_budget
 from damask_copilot.schemas.checker_report import CheckerReport
@@ -17,6 +18,9 @@ class SimulationCheckerAgent(BaseAgent):
     name = "checker"
     max_auto_cells = 16 * 16 * 16
     max_auto_grains = 20
+
+    def __init__(self, preprocess_client: DAMASKPreprocessClient | None = None) -> None:
+        self.preprocess_client = preprocess_client or DAMASKPreprocessClient()
 
     def run(self, state: ResearchState) -> ResearchState:
         if state.simulation_plan is None or state.generated_files is None or state.material_card is None:
@@ -52,6 +56,8 @@ class SimulationCheckerAgent(BaseAgent):
 
         if missing_files:
             errors.append("Required generated input files are missing.")
+        else:
+            errors.extend(self._check_material_mapping_consistency(state))
 
         ok = not errors
         state.checker_report = CheckerReport(
@@ -84,3 +90,21 @@ class SimulationCheckerAgent(BaseAgent):
                 f"Planned grain count {state.simulation_plan.geometry.grains} exceeds automatic limit {self.max_auto_grains}."
             )
         return errors
+
+    def _check_material_mapping_consistency(self, state: ResearchState) -> list[str]:
+        grid_info = self.preprocess_client.inspect_grid(path=state.generated_files.geometry_path)
+        if not grid_info.get("ok", False):
+            return [f"Failed to inspect geometry.vti: {grid_info.get('error', 'unknown error')}"]
+
+        material_info = self.preprocess_client.inspect_material_yaml(path=state.generated_files.material_path)
+        if not material_info.get("ok", False):
+            return [f"Failed to inspect material.yaml: {material_info.get('error', 'unknown error')}"]
+
+        geometry_material_count = int(grid_info.get("material_count", 0))
+        material_yaml_count = int(material_info.get("material_count", 0))
+        if geometry_material_count != material_yaml_count:
+            return [
+                "Geometry/material mismatch: geometry.vti material_count "
+                f"({geometry_material_count}) does not match material.yaml material entries ({material_yaml_count})."
+            ]
+        return []

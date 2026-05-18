@@ -29,7 +29,7 @@ class SimulationPlannerAgent(BaseAgent):
         if state.goal is None:
             raise ValueError("Research goal must be set before planning a simulation.")
 
-        material_slug = state.selected_material_key or state.goal.material_system
+        material_slug = state.selected_material_key or (state.material_card.material_id if state.material_card else None) or state.goal.material_system
         runner = self.llm_runner or StructuredLLMRunner(model_name=state.model_name or self.model_name)
         parsed = runner.run_structured(
             prompt_name="simulation_planner",
@@ -78,7 +78,7 @@ class SimulationPlannerAgent(BaseAgent):
         if "compression" in state.goal.objective.lower():
             loading_mode = "uniaxial_compression"
 
-        material_slug = state.selected_material_key or state.goal.material_system
+        material_slug = state.selected_material_key or (state.material_card.material_id if state.material_card else None) or state.goal.material_system
         plan_name = f"{material_slug}_smoke_test"
 
         state.simulation_plan = SimulationPlan(
