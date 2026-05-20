@@ -1,0 +1,23 @@
+query: "Study FCC aluminum under uniaxial tension"
+mode: dry_run
+use_llm: true
+max_iterations: 1
+
+user_files:
+  - data/literature/fcc_al/notes/project_notes.md
+
+literature_files:
+  - data/literature/fcc_al/notes/project_notes.md
+
+source_list_files:
+  - data/literature/fcc_al/source_lists/seed_sources.txt
+
+experimental_files:
+  - data/experimental/fcc_al/raw/tension_curve.csv
+
+literature_sources:
+  - "doi:10.xxxx/xxxx"
+  - "arXiv:1234.56789"
+
+user_constraints:
+  allow_overwrite: true

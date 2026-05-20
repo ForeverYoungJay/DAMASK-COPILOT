@@ -56,7 +56,7 @@ def run_research_graph(
     if stream:
         for update in app.stream(initial_state, config=config, stream_mode="updates"):
             for node_name, node_update in update.items():
-                print(f"[{node_name}] updated: {sorted(node_update.keys())}")
+                print(f"[{node_name}] updated: {_describe_node_update(node_update)}")
         snapshot = app.get_state(config)
         return snapshot.values
     return app.invoke(initial_state, config=config)
@@ -81,3 +81,12 @@ def _resolve_input(
             int(payload.get("max_iterations", max_iterations)),
         )
     return user_query, mode, use_llm, model, max_iterations
+
+
+def _describe_node_update(node_update: Any) -> str:
+    """Return a safe, human-readable summary for streamed node updates."""
+    if hasattr(node_update, "keys"):
+        return str(sorted(node_update.keys()))
+    if isinstance(node_update, (list, tuple)):
+        return f"{type(node_update).__name__}(len={len(node_update)})"
+    return type(node_update).__name__

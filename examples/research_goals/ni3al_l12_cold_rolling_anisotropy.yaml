@@ -1,0 +1,15 @@
+query: "Study Ni3Al L12 cold rolling anisotropy"
+mode: dry_run
+use_llm: true
+max_iterations: 1
+
+literature_files:
+  - data/literature/ni3al_l12/cold_rolling_anisotropy/notes/reading_notes.md
+
+source_list_files:
+  - data/literature/ni3al_l12/cold_rolling_anisotropy/source_lists/seed_sources.txt
+
+experimental_files: []
+
+user_constraints:
+  allow_overwrite: true

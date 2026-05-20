@@ -17,6 +17,7 @@ from damask_copilot.schemas.llm_outputs import (
 )
 from damask_copilot.schemas.material import MaterialParameterCard
 from damask_copilot.schemas.postprocess_report import PostprocessReport
+from damask_copilot.schemas.project_plan import CandidateSimulation, ProjectPlan
 from damask_copilot.schemas.research_goal import ResearchGoal
 from damask_copilot.schemas.run_report import RunReport
 from damask_copilot.schemas.simulation_plan import SimulationPlan
@@ -46,6 +47,11 @@ class ResearchState(BaseModel):
     research_manager_output: ResearchManagerOutput | None = None
     material_card: MaterialParameterCard | None = None
     material_knowledge_output: MaterialKnowledgeOutput | None = None
+    project_plan: ProjectPlan | None = None
+    project_milestones: list[str] = Field(default_factory=list)
+    current_milestone: str | None = None
+    candidate_simulations: list[CandidateSimulation] = Field(default_factory=list)
+    selected_simulation_id: str | None = None
     simulation_plan: SimulationPlan | None = None
     simulation_planner_output: SimulationPlannerOutput | None = None
     generated_files: GeneratedFiles | None = None

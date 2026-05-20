@@ -1,0 +1,5 @@
+# One DOI / URL / arXiv id per line.
+# Example:
+# doi:10.xxxx/xxxx
+# arXiv:1234.56789
+

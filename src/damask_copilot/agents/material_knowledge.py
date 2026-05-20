@@ -49,11 +49,20 @@ class MaterialKnowledgeAgent(BaseAgent):
         crystal_structure = (
             state.material_card.crystal_structure if state.material_card else (state.goal.material_system if state.goal else "unknown")
         )
-        summary = f"{material_name} is currently handled with deterministic local parameter data only."
+        notes = list(state.notes)
+        evidence_summary = notes[0] if notes else "No literature or experimental context has been summarized yet."
+        summary = (
+            f"{material_name} is currently handled with deterministic local parameter data. "
+            f"Context available so far: {evidence_summary}"
+        )
         considerations = [
             "Use a small smoke-test plan before enabling real DAMASK execution.",
             "Keep loading simple and validate all generated plans with deterministic checker rules.",
         ]
+        if any("No experimental dataset" in item for item in notes):
+            considerations.append("Treat experiment-simulation alignment as optional for this planning pass unless validation becomes a stated goal.")
+        if any("not directly relevant" in item.lower() for item in notes):
+            considerations.append("Do not treat the current literature inputs as a calibration source; use them only for mechanism framing.")
         state.material_knowledge_output = MaterialKnowledgeOutput(
             material_label=material_name,
             crystal_structure=crystal_structure,
