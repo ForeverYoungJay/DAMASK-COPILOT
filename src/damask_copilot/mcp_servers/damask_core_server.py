@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from damask_copilot.mcp_servers._fastmcp import FastMCP
 
 from damask_mcp_adapter.modules.core import (
     check_damask_installation as check_damask_installation_impl,

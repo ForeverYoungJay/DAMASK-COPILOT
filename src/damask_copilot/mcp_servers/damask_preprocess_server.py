@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from damask_copilot.mcp_servers._fastmcp import FastMCP
 
 from damask_mcp_adapter.modules.grid_tools import (
     clean_grid as clean_grid_impl,
@@ -11,7 +11,10 @@ from damask_mcp_adapter.modules.grid_tools import (
     renumber_grid as renumber_grid_impl,
     scale_grid as scale_grid_impl,
 )
-from damask_mcp_adapter.modules.config_material import create_material_yaml as create_material_yaml_impl
+from damask_mcp_adapter.modules.config_material import (
+    create_material_yaml as create_material_yaml_impl,
+    create_material_yaml_from_template as create_material_yaml_from_template_impl,
+)
 from damask_mcp_adapter.modules.loading import (
     create_simple_compression_load_yaml as create_simple_compression_load_yaml_impl,
     create_simple_tension_load_yaml as create_simple_tension_load_yaml_impl,
@@ -92,6 +95,17 @@ def create_material_yaml(
 ) -> dict:
     """Create a basic DAMASK material.yaml with one phase and one constituent."""
     return create_material_yaml_impl(path, material_name, phase_name, lattice, elastic, plastic)
+
+
+@mcp.tool()
+def create_material_yaml_from_template(
+    path: str,
+    homogenization: dict,
+    phase: dict,
+    material: list[dict],
+) -> dict:
+    """Create a DAMASK material.yaml from explicit homogenization, phase, and material mappings."""
+    return create_material_yaml_from_template_impl(path, homogenization, phase, material)
 
 
 @mcp.tool()

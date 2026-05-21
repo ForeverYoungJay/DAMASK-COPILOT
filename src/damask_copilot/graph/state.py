@@ -1,8 +1,10 @@
-"""Typed state and bridge helpers for the LangGraph DAMASK research graph."""
+"""Typed state models and legacy bridge helpers for DAMASK Copilot graphs."""
 
 from __future__ import annotations
 
 from typing import Any, TypedDict, cast
+
+from pydantic import BaseModel, Field
 
 from damask_copilot.schemas.checker_report import CheckerReport
 from damask_copilot.schemas.critic_report import CriticReport
@@ -19,9 +21,121 @@ from damask_copilot.schemas.llm_outputs import (
 from damask_copilot.schemas.material import MaterialParameterCard
 from damask_copilot.schemas.postprocess_report import PostprocessReport
 from damask_copilot.schemas.research_goal import ResearchGoal
-from damask_copilot.schemas.research_state import ResearchState, TraceEvent
+from damask_copilot.schemas.research_state import ResearchState as LegacyResearchState, TraceEvent
 from damask_copilot.schemas.run_report import RunReport
 from damask_copilot.schemas.simulation_plan import SimulationPlan
+
+
+class ResearchState(BaseModel):
+    """Shared v1 state for the 7-agent DAMASK Copilot workflow."""
+
+    user_goal: str = Field(..., min_length=1)
+    workflow_type: str | None = None
+    material_system: str | None = None
+    objective: str | None = None
+    reasoning_summary: str | None = None
+    research_manager_output: dict[str, Any] | None = None
+    needs_literature: bool = False
+    needs_experimental_data: bool = False
+    needs_damask_simulation: bool = True
+    needs_parameter_optimization: bool = False
+    needs_report: bool = True
+    experimental_data: dict[str, Any] | None = None
+
+    literature_summary: dict[str, Any] | None = None
+    known_parameters: dict[str, Any] | None = None
+    damask_capabilities: dict[str, Any] | None = None
+
+    project_plan: dict[str, Any] | None = None
+    hypotheses: list[dict[str, Any]] = Field(default_factory=list)
+
+    simulation_plan: Any | None = None
+    simulation_spec: dict[str, Any] | None = None
+    material_yaml_path: str | None = None
+    load_yaml_path: str | None = None
+    geometry_path: str | None = None
+    numerics_yaml_path: str | None = None
+    workspace: str | None = None
+    generated_files: GeneratedFiles | None = None
+
+    validation_result: dict[str, Any] | None = None
+    run_result: dict[str, Any] | None = None
+    postprocessing_result: dict[str, Any] | None = None
+    alignment_result: dict[str, Any] | None = None
+    checker_report: CheckerReport | None = None
+    run_report: RunReport | None = None
+    postprocess_report: PostprocessReport | None = None
+    critic_report: CriticReport | None = None
+
+    critique: dict[str, Any] | None = None
+    next_action: dict[str, Any] | None = None
+    iteration_decision: IterationDecisionOutput | dict[str, Any] | None = None
+
+    iteration: int = 0
+    max_iterations: int = 3
+
+    final_report: str | None = None
+    report_path: str | None = None
+
+    project_name: str | None = None
+    project_dir: str | None = None
+    user_files: list[str] = Field(default_factory=list)
+    literature_files: list[str] = Field(default_factory=list)
+    literature_sources: list[Any] = Field(default_factory=list)
+    source_list_files: list[str] = Field(default_factory=list)
+    experimental_files: list[str] = Field(default_factory=list)
+    parameter_history: list[dict[str, Any]] = Field(default_factory=list)
+    agent_records: list[dict[str, Any]] = Field(default_factory=list)
+    trace: list[dict[str, Any]] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    use_llm: bool = False
+    model: str | None = None
+    mode: str = "dry_run"
+
+    def append_trace(self, agent: str, event: str, details: dict[str, Any] | None = None) -> "ResearchState":
+        """Append a trace entry to the mutable v1 state."""
+        self.trace.append({"agent": agent, "event": event, "details": details or {}})
+        return self
+
+    def append_error(self, message: str) -> "ResearchState":
+        """Append an error entry to the mutable v1 state."""
+        self.errors.append(message)
+        return self
+
+    @property
+    def traces(self) -> list[dict[str, Any]]:
+        """Compatibility alias for legacy state.traces access."""
+        return self.trace
+
+    @property
+    def selected_material_key(self) -> str | None:
+        """Compatibility alias for legacy selected_material_key access."""
+        return self.material_system
+
+    @selected_material_key.setter
+    def selected_material_key(self, value: str | None) -> None:
+        """Compatibility alias for legacy selected_material_key mutation."""
+        self.material_system = value
+
+
+def create_v1_state(
+    *,
+    user_goal: str,
+    workflow_type: str | None = None,
+    max_iterations: int = 3,
+    mode: str = "dry_run",
+    use_llm: bool = False,
+    model: str | None = None,
+) -> ResearchState:
+    """Create a fresh v1 workflow state."""
+    return ResearchState(
+        user_goal=user_goal,
+        workflow_type=workflow_type,
+        max_iterations=max_iterations,
+        mode=mode,
+        use_llm=use_llm,
+        model=model,
+    )
 
 
 class DamaskResearchState(TypedDict, total=False):
@@ -102,7 +216,7 @@ def create_initial_state(
     })
 
 
-def legacy_state_from_graph(state: DamaskResearchState) -> ResearchState:
+def legacy_state_from_graph(state: DamaskResearchState) -> LegacyResearchState:
     """Translate LangGraph state into the existing Pydantic ResearchState."""
     literature_notes = list(state.get("literature_notes", []))
     material_knowledge = _validate_optional(state.get("material_knowledge"), MaterialKnowledgeOutput)
@@ -113,7 +227,7 @@ def legacy_state_from_graph(state: DamaskResearchState) -> ResearchState:
 
     traces = [_validate_model(item, TraceEvent) for item in state.get("trace", [])]
 
-    return ResearchState(
+    return LegacyResearchState(
         user_query=state["user_query"],
         dry_run=state.get("mode") == "dry_run",
         use_llm=bool(state.get("use_llm", False)),
@@ -141,7 +255,7 @@ def legacy_state_from_graph(state: DamaskResearchState) -> ResearchState:
     )
 
 
-def graph_state_from_legacy(previous: DamaskResearchState, legacy: ResearchState) -> DamaskResearchState:
+def graph_state_from_legacy(previous: DamaskResearchState, legacy: LegacyResearchState) -> DamaskResearchState:
     """Merge updates from the existing Pydantic state back into the LangGraph state."""
     next_state = dict(previous)
     next_state["selected_material_key"] = legacy.selected_material_key

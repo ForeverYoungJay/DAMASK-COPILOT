@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pytest
 
 from damask_copilot import cli
+from damask_copilot.graph.state import ResearchState
 from damask_copilot.graph.materials_research_graph import _resolve_materials_input
 
 
@@ -23,11 +26,11 @@ def test_cli_materials_run_invokes_materials_graph(monkeypatch, capsys):
             "--user-file",
             "notes.txt",
             "--literature-file",
-            "data/literature/fcc_al/notes/project_notes.md",
+            "projects/fcc_al/literature/notes/project_notes.md",
             "--experimental-file",
             "exp.csv",
             "--source-list-file",
-            "data/literature/fcc_al/source_lists/seed_sources.txt",
+            "projects/fcc_al/literature/source_lists/seed_sources.txt",
             "--literature-source",
             "doi:10.1000/example",
         ],
@@ -37,10 +40,10 @@ def test_cli_materials_run_invokes_materials_graph(monkeypatch, capsys):
     assert captured["user_query"] == "Study FCC aluminum under uniaxial tension"
     assert captured["mode"] == "dry_run"
     assert captured["user_files"] == ["notes.txt"]
-    assert captured["literature_files"] == ["data/literature/fcc_al/notes/project_notes.md"]
+    assert captured["literature_files"] == ["projects/fcc_al/literature/notes/project_notes.md"]
     assert captured["experimental_files"] == ["exp.csv"]
     assert captured["literature_sources"] == ["doi:10.1000/example"]
-    assert captured["source_list_files"] == ["data/literature/fcc_al/source_lists/seed_sources.txt"]
+    assert captured["source_list_files"] == ["projects/fcc_al/literature/source_lists/seed_sources.txt"]
     output = capsys.readouterr().out
     assert "Completed materials research pipeline" in output
 
@@ -136,3 +139,105 @@ def test_resolve_materials_input_expands_source_list_file(tmp_path):
     )
 
     assert payload["literature_sources"] == ["doi:10.1000/example", "arXiv:1234.56789"]
+
+
+def test_cli_research_verbose_prints_trace_and_agent_records(monkeypatch, capsys, tmp_path):
+    workspace = tmp_path / "workflow"
+    final_state = ResearchState(
+        user_goal="Calibrate Ni3Al",
+        workflow_type="calibration",
+        workspace=str(workspace),
+        report_path=str(workspace / "research_report.md"),
+    )
+    final_state.trace = [
+        {"agent": "research_manager", "event": "goal_inferred", "details": {"workflow_type": "calibration"}},
+        {"agent": "scientific_knowledge", "event": "knowledge_compiled", "details": {"material_system": "ni3al_l12"}},
+    ]
+
+    monkeypatch.setattr(cli, "run_workflow", lambda **kwargs: final_state)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "damask-copilot",
+            "research",
+            "Calibrate Ni3Al",
+            "--dry-run",
+            "--verbose",
+        ],
+    )
+
+    assert cli.main() == 0
+    output = capsys.readouterr().out
+    assert "[research_manager]" in output
+    assert "goal_inferred" in output
+    assert "Agent records:" in output
+    assert "agent_records" in output
+
+
+def test_cli_research_accepts_project_files_and_sources(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run_workflow(**kwargs):
+        captured.update(kwargs)
+        return ResearchState(user_goal="Calibrate Ni3Al", workspace=str(tmp_path / "workflow"))
+
+    source_list = tmp_path / "sources.txt"
+    source_list.write_text("doi:10.1000/example\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "run_workflow", fake_run_workflow)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "damask-copilot",
+            "research",
+            "Calibrate Ni3Al",
+            "--dry-run",
+            "--project-dir",
+            str(tmp_path),
+            "--user-file",
+            "notes.txt",
+            "--literature-file",
+            "paper.pdf",
+            "--experimental-file",
+            "exp.csv",
+            "--literature-source",
+            "doi:10.1000/manual",
+            "--source-list-file",
+            str(source_list),
+        ],
+    )
+
+    assert cli.main() == 0
+    overrides = captured["state_overrides"]
+    assert overrides["project_dir"] == str(tmp_path)
+    assert overrides["project_name"] == tmp_path.name
+    assert overrides["user_files"] == ["notes.txt"]
+    assert overrides["literature_files"] == ["paper.pdf"]
+    assert overrides["experimental_files"] == ["exp.csv"]
+    assert overrides["source_list_files"] == [str(source_list)]
+    assert overrides["literature_sources"] == ["doi:10.1000/manual", "doi:10.1000/example"]
+
+
+def test_cli_research_resolves_projects_folder_from_project_name(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run_workflow(**kwargs):
+        captured.update(kwargs)
+        return ResearchState(user_goal="Calibrate Ni3Al", workspace=str(tmp_path / "workflow"))
+
+    monkeypatch.setattr(cli, "run_workflow", fake_run_workflow)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "damask-copilot",
+            "research",
+            "Calibrate Ni3Al",
+            "--dry-run",
+            "--project-name",
+            "ni3al_calibration",
+        ],
+    )
+
+    assert cli.main() == 0
+    overrides = captured["state_overrides"]
+    assert overrides["project_name"] == "ni3al_calibration"
+    assert overrides["project_dir"] == str(Path("projects") / "ni3al_calibration")

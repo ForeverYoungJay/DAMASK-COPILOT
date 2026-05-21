@@ -1,4 +1,4 @@
-"""Literature-style background agent."""
+"""Deprecated literature micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.graph.state import DamaskResearchState, append_trace
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
@@ -15,7 +16,10 @@ from damask_copilot.schemas.llm_outputs import LiteratureAgentOutput
 
 
 class LiteratureAgent:
-    """Search, access, and synthesize literature evidence for planning."""
+    """Deprecated wrapper for literature collection.
+
+    The unified v1 architecture uses `ScientificKnowledgeAgent` instead.
+    """
 
     name = "literature_agent"
 
@@ -27,6 +31,7 @@ class LiteratureAgent:
         llm_runner: StructuredLLMRunner | None = None,
         literature_client: LiteratureMCPClient | None = None,
     ) -> None:
+        warn_legacy_agent(legacy_name="LiteratureAgent", replacement="ScientificKnowledgeAgent")
         self.use_llm = use_llm
         self.model_name = model_name
         self.llm_runner = llm_runner

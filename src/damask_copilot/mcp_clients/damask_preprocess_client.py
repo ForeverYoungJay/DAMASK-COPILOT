@@ -12,7 +12,13 @@ from damask_mcp_adapter.modules.loading import (
 )
 from damask_mcp_adapter.modules.grid_tools import inspect_grid
 from damask_mcp_adapter.modules.material_tools import add_material_entry, inspect_material_yaml
+from damask_mcp_adapter.modules.material_tools import validate_material_yaml as validate_material_yaml_impl
 from damask_mcp_adapter.workspace import import_damask
+from damask_mcp_adapter.modules.yaml_tools import (
+    read_yaml_file as read_yaml_file_impl,
+    validate_yaml_file as validate_yaml_file_impl,
+    write_yaml_file as write_yaml_file_impl,
+)
 
 
 class DAMASKPreprocessClient:
@@ -77,6 +83,9 @@ class DAMASKPreprocessClient:
     def inspect_material_yaml(self, *, path: str) -> dict[str, Any]:
         return inspect_material_yaml(path)
 
+    def validate_material_yaml(self, *, path: str) -> dict[str, Any]:
+        return validate_material_yaml_impl(path)
+
     def add_material_entry(
         self,
         *,
@@ -95,3 +104,12 @@ class DAMASKPreprocessClient:
         if count == 1 and quaternions and isinstance(quaternions[0], float):
             return [quaternions]
         return quaternions
+
+    def write_yaml_file(self, *, path: str, data: object) -> dict[str, Any]:
+        return write_yaml_file_impl(path=path, data=data)
+
+    def read_yaml_file(self, *, path: str) -> dict[str, Any]:
+        return read_yaml_file_impl(path)
+
+    def validate_yaml_file(self, *, path: str) -> dict[str, Any]:
+        return validate_yaml_file_impl(path)

@@ -1,7 +1,8 @@
-"""Hypothesis generation agent."""
+"""Deprecated hypothesis micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.graph.materials_research_state import MaterialsResearchState, append_trace
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
@@ -9,7 +10,10 @@ from damask_copilot.schemas.llm_outputs import HypothesisAgentOutput
 
 
 class HypothesisAgent:
-    """Generate testable hypotheses from the current research framing."""
+    """Deprecated wrapper for project-level hypothesis generation.
+
+    The unified v1 architecture uses `ProjectPlannerAgent` instead.
+    """
 
     name = "hypothesis_agent"
 
@@ -20,6 +24,7 @@ class HypothesisAgent:
         model_name: str | None = None,
         llm_runner: StructuredLLMRunner | None = None,
     ) -> None:
+        warn_legacy_agent(legacy_name="HypothesisAgent", replacement="ProjectPlannerAgent")
         self.use_llm = use_llm
         self.model_name = model_name
         self.llm_runner = llm_runner

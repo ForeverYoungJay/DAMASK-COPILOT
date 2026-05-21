@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from damask_copilot.mcp_servers._fastmcp import FastMCP
 
 from damask_mcp_adapter.modules.result_tools import (
     add_curl as add_curl_impl,

@@ -1,4 +1,4 @@
-"""Simulation runner agent."""
+"""Deprecated simulation-runner micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.mcp_clients.damask_runner_client import DAMASKRunnerClient
 from damask_copilot.policies.simulation_budget import MAX_TOTAL_CELLS
 from damask_copilot.schemas.research_state import ResearchState
@@ -13,11 +14,15 @@ from damask_copilot.schemas.run_report import RunReport
 
 
 class SimulationRunnerAgent(BaseAgent):
-    """Run or skip the DAMASK simulation."""
+    """Deprecated wrapper for DAMASK execution.
+
+    The unified v1 architecture uses `DAMASKExecutionAgent` instead.
+    """
 
     name = "runner"
 
     def __init__(self, runner_client: DAMASKRunnerClient | None = None) -> None:
+        warn_legacy_agent(legacy_name="SimulationRunnerAgent", replacement="DAMASKExecutionAgent")
         self.runner_client = runner_client or DAMASKRunnerClient()
 
     def run(self, state: ResearchState) -> ResearchState:

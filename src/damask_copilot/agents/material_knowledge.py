@@ -1,8 +1,9 @@
-"""Material knowledge agent placeholder."""
+"""Deprecated material-knowledge micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
 from damask_copilot.schemas.llm_outputs import MaterialKnowledgeOutput
@@ -10,11 +11,15 @@ from damask_copilot.schemas.research_state import ResearchState
 
 
 class MaterialKnowledgeAgent(BaseAgent):
-    """Placeholder for future literature and expert-knowledge reasoning."""
+    """Deprecated wrapper for material-knowledge aggregation.
+
+    The unified v1 architecture uses `ScientificKnowledgeAgent` instead.
+    """
 
     name = "material_knowledge"
 
     def __init__(self, *, use_llm: bool = False, model_name: str | None = None, llm_runner: StructuredLLMRunner | None = None) -> None:
+        warn_legacy_agent(legacy_name="MaterialKnowledgeAgent", replacement="ScientificKnowledgeAgent")
         self.use_llm = use_llm
         self.model_name = model_name
         self.llm_runner = llm_runner

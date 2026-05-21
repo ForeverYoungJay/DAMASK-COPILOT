@@ -10,6 +10,12 @@ def test_research_manager_llm_mock_updates_state():
             "research_manager": {
                 "material_system": "fcc_al",
                 "objective": "Study response under uniaxial tension",
+                "workflow_type": "simulation_run",
+                "needs_literature": False,
+                "needs_experimental_data": False,
+                "needs_damask_simulation": True,
+                "needs_parameter_optimization": False,
+                "needs_report": True,
                 "reasoning_summary": "The query explicitly states FCC Al under tension.",
             }
         },
@@ -20,4 +26,7 @@ def test_research_manager_llm_mock_updates_state():
     assert updated.goal is not None
     assert updated.goal.material_system == "fcc_al"
     assert updated.research_manager_output is not None
+    assert updated.research_manager_output.workflow_type == "simulation_run"
+    assert updated.research_manager_output.needs_damask_simulation is True
+    assert updated.research_manager_output.needs_report is True
     assert updated.traces[-1].event == "goal_inferred_llm"

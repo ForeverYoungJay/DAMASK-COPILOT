@@ -1,8 +1,9 @@
-"""Scientific critic agent."""
+"""Deprecated scientific-critic micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
 from damask_copilot.schemas.critic_report import CriticReport
@@ -11,11 +12,15 @@ from damask_copilot.schemas.research_state import ResearchState
 
 
 class ScientificCriticAgent(BaseAgent):
-    """Produce a preliminary deterministic critique."""
+    """Deprecated wrapper for critique logic.
+
+    The unified v1 architecture uses `AnalysisAndCriticAgent` instead.
+    """
 
     name = "scientific_critic"
 
     def __init__(self, *, use_llm: bool = False, model_name: str | None = None, llm_runner: StructuredLLMRunner | None = None) -> None:
+        warn_legacy_agent(legacy_name="ScientificCriticAgent", replacement="AnalysisAndCriticAgent")
         self.use_llm = use_llm
         self.model_name = model_name
         self.llm_runner = llm_runner

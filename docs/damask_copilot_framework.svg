@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">DAMASK Copilot Framework</title>
+  <desc id="desc">Presentation-ready architecture diagram of the DAMASK Copilot framework showing the seven core agents, typed state, scientific memory, cpdataset-backed priors, deterministic tool layer, MCP-compatible DAMASK services, and the iterative simulation loop.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fbff"/>
+      <stop offset="55%" stop-color="#eef6ff"/>
+      <stop offset="100%" stop-color="#f7fbf7"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f4c81"/>
+      <stop offset="50%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="loop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffef7"/>
+      <stop offset="100%" stop-color="#f8fbff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <path d="M0,0 L14,7 L0,14 z" fill="#1f2937"/>
+    </marker>
+    <marker id="arrow-soft" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <path d="M0,0 L14,7 L0,14 z" fill="#64748b"/>
+    </marker>
+    <style>
+      text {
+        font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
+        fill: #0f172a;
+      }
+      .hero-title {
+        font-size: 34px;
+        font-weight: 800;
+        fill: #ffffff;
+      }
+      .hero-subtitle {
+        font-size: 16px;
+        fill: #dbeafe;
+      }
+      .section-title {
+        font-size: 20px;
+        font-weight: 750;
+      }
+      .section-note {
+        font-size: 13px;
+        fill: #475569;
+      }
+      .card-title {
+        font-size: 18px;
+        font-weight: 750;
+      }
+      .card-body {
+        font-size: 13px;
+        fill: #334155;
+      }
+      .mini {
+        font-size: 12px;
+        fill: #64748b;
+      }
+      .panel {
+        fill: #ffffff;
+        stroke: #dbe4f0;
+        stroke-width: 1.5;
+        filter: url(#shadow);
+      }
+      .soft-panel {
+        fill: #ffffff;
+        stroke: #dbe4f0;
+        stroke-width: 1.5;
+      }
+      .agent {
+        fill: #f8fbff;
+        stroke: #1d4ed8;
+        stroke-width: 2;
+      }
+      .state {
+        fill: #ecfeff;
+        stroke: #0f766e;
+        stroke-width: 2.2;
+      }
+      .memory {
+        fill: #f7f1ff;
+        stroke: #7c3aed;
+        stroke-width: 2;
+      }
+      .tool {
+        fill: #fff7ed;
+        stroke: #d97706;
+        stroke-width: 2;
+      }
+      .mcp {
+        fill: #fef2f2;
+        stroke: #dc2626;
+        stroke-width: 2;
+        stroke-dasharray: 8 6;
+      }
+      .flow {
+        stroke: #1f2937;
+        stroke-width: 3;
+        fill: none;
+        marker-end: url(#arrow);
+      }
+      .flow-soft {
+        stroke: #64748b;
+        stroke-width: 2.4;
+        fill: none;
+        marker-end: url(#arrow-soft);
+      }
+      .flow-dashed {
+        stroke: #94a3b8;
+        stroke-width: 2.4;
+        stroke-dasharray: 10 8;
+        fill: none;
+        marker-end: url(#arrow-soft);
+      }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="1330" cy="115" r="210" fill="#dbeafe" opacity="0.35"/>
+  <circle cx="150" cy="920" r="180" fill="#dcfce7" opacity="0.42"/>
+  <circle cx="1510" cy="860" r="120" fill="#fee2e2" opacity="0.38"/>
+
+  <rect x="40" y="32" width="1520" height="120" rx="28" fill="url(#hero)" filter="url(#shadow)"/>
+  <text x="76" y="82" class="hero-title">DAMASK Copilot Framework</text>
+  <text x="76" y="112" class="hero-subtitle">Closed-loop crystal-plasticity discovery system with seven core agents, typed state, cpdataset priors, and MCP-compatible DAMASK execution.</text>
+
+  <rect x="52" y="188" width="262" height="222" rx="24" class="panel"/>
+  <text x="78" y="226" class="section-title">Research Inputs</text>
+  <text x="78" y="252" class="section-note">What enters the workflow</text>
+  <rect x="78" y="274" width="210" height="42" rx="14" class="soft-panel"/>
+  <text x="96" y="300" class="card-body">User goal and workflow type</text>
+  <rect x="78" y="328" width="210" height="42" rx="14" class="soft-panel"/>
+  <text x="96" y="354" class="card-body">Material system and target observables</text>
+  <rect x="78" y="382" width="210" height="42" rx="14" class="soft-panel"/>
+  <text x="96" y="408" class="card-body">Project files, literature, experiments</text>
+
+  <rect x="352" y="188" width="896" height="108" rx="24" class="state" filter="url(#shadow)"/>
+  <text x="384" y="226" class="section-title">Typed Shared State</text>
+  <text x="384" y="250" class="section-note">`graph/state.py::ResearchState` keeps the workflow consistent across agents and iterations.</text>
+  <text x="384" y="274" class="mini">Goal, knowledge summaries, project plan, simulation spec, validation and execution outputs, critique, next action, parameter history, agent records, and trace.</text>
+
+  <rect x="1284" y="188" width="264" height="456" rx="24" class="panel"/>
+  <text x="1312" y="226" class="section-title">Scientific Memory</text>
+  <text x="1312" y="252" class="section-note">Cross-iteration context and reuse</text>
+  <rect x="1310" y="278" width="212" height="78" rx="18" class="memory"/>
+  <text x="1328" y="306" class="card-title">cpdataset priors</text>
+  <text x="1328" y="328" class="card-body">Material parameters, elastic data,</text>
+  <text x="1328" y="346" class="card-body">templates, and source provenance</text>
+  <rect x="1310" y="372" width="212" height="78" rx="18" class="memory"/>
+  <text x="1328" y="400" class="card-title">Experiment and results</text>
+  <text x="1328" y="422" class="card-body">Experimental summaries, prior runs,</text>
+  <text x="1328" y="440" class="card-body">workspace records, alignment history</text>
+  <rect x="1310" y="466" width="212" height="78" rx="18" class="memory"/>
+  <text x="1328" y="494" class="card-title">Learning memory</text>
+  <text x="1328" y="516" class="card-body">Optimization history, failure fixes,</text>
+  <text x="1328" y="534" class="card-body">materials knowledge graph context</text>
+  <text x="1312" y="586" class="mini">Implemented via `ScientificMemoryLayer` and its stores.</text>
+
+  <rect x="352" y="332" width="896" height="438" rx="30" fill="url(#loop)" stroke="#cbd5e1" stroke-width="2" filter="url(#shadow)"/>
+  <text x="384" y="370" class="section-title">Seven-Core-Agent Workflow</text>
+  <text x="384" y="396" class="section-note">Linear intake, then an iterative design-run-analyze loop, then a final research report.</text>
+
+  <rect x="392" y="432" width="236" height="92" rx="20" class="agent"/>
+  <text x="412" y="462" class="card-title">1. ResearchManagerAgent</text>
+  <text x="412" y="484" class="card-body">Frames the problem, picks the</text>
+  <text x="412" y="502" class="card-body">workflow direction, sets intent</text>
+
+  <rect x="682" y="432" width="236" height="92" rx="20" class="agent"/>
+  <text x="702" y="462" class="card-title">2. ScientificKnowledgeAgent</text>
+  <text x="702" y="484" class="card-body">Aggregates literature, experiments,</text>
+  <text x="702" y="502" class="card-body">cpdataset priors, DAMASK context</text>
+
+  <rect x="972" y="432" width="236" height="92" rx="20" class="agent"/>
+  <text x="992" y="462" class="card-title">3. ProjectPlannerAgent</text>
+  <text x="992" y="484" class="card-body">Builds hypotheses, validation goals,</text>
+  <text x="992" y="502" class="card-body">candidate studies, and stop criteria</text>
+
+  <rect x="392" y="566" width="816" height="170" rx="24" fill="#fffdf5" stroke="#fde68a" stroke-width="2"/>
+  <text x="420" y="602" class="section-title">Closed Simulation Loop</text>
+  <text x="420" y="626" class="section-note">Repeat until evidence is sufficient, calibration improves, or max iterations are reached.</text>
+
+  <rect x="420" y="648" width="210" height="62" rx="18" class="agent"/>
+  <text x="438" y="674" class="card-title">4. SimulationDesignerAgent</text>
+  <text x="438" y="694" class="card-body">Generates material, load, numerics, geometry</text>
+
+  <rect x="652" y="648" width="150" height="62" rx="18" class="tool"/>
+  <text x="672" y="674" class="card-title">Validation</text>
+  <text x="672" y="694" class="card-body">`validate_damask_inputs`</text>
+
+  <rect x="824" y="648" width="186" height="62" rx="18" class="agent"/>
+  <text x="842" y="674" class="card-title">5. DAMASKExecutionAgent</text>
+  <text x="842" y="694" class="card-body">Run, parse logs, collect result files</text>
+
+  <rect x="1032" y="648" width="148" height="62" rx="18" class="tool"/>
+  <text x="1050" y="674" class="card-title">Postprocess</text>
+  <text x="1050" y="694" class="card-body">`postprocess_results`</text>
+
+  <rect x="652" y="724" width="358" height="62" rx="18" class="agent"/>
+  <text x="674" y="750" class="card-title">6. AnalysisAndCriticAgent</text>
+  <text x="674" y="770" class="card-body">Compare with experiment, assess physics, choose next action</text>
+
+  <rect x="682" y="814" width="236" height="92" rx="20" class="agent"/>
+  <text x="702" y="844" class="card-title">7. ResearchReportAgent</text>
+  <text x="702" y="866" class="card-body">Synthesizes findings into the final</text>
+  <text x="702" y="884" class="card-body">scientific report and workspace output</text>
+
+  <rect x="52" y="450" width="262" height="256" rx="24" class="panel"/>
+  <text x="78" y="488" class="section-title">Deterministic Tool Layer</text>
+  <text x="78" y="514" class="section-note">Keep non-agent work small and reviewable</text>
+  <rect x="78" y="540" width="210" height="56" rx="16" class="tool"/>
+  <text x="98" y="566" class="card-title">Input builders</text>
+  <text x="98" y="586" class="card-body">`damask_yaml.py`, `geometry.py`</text>
+  <rect x="78" y="610" width="210" height="56" rx="16" class="tool"/>
+  <text x="98" y="636" class="card-title">Execution helpers</text>
+  <text x="98" y="656" class="card-body">`execution.py`, log parsing</text>
+  <rect x="78" y="680" width="210" height="56" rx="16" class="tool"/>
+  <text x="98" y="706" class="card-title">Analysis helpers</text>
+  <text x="98" y="726" class="card-body">`validation.py`, `postprocessing.py`</text>
+
+  <rect x="52" y="750" width="1496" height="176" rx="28" class="mcp"/>
+  <text x="86" y="792" class="section-title">MCP-Compatible DAMASK Services</text>
+  <text x="86" y="818" class="section-note">Thin server boundary for core inspection, preprocessing, runner control, post-processing, and misc scientific utilities.</text>
+  <rect x="86" y="840" width="250" height="50" rx="16" class="soft-panel"/>
+  <text x="106" y="870" class="card-body">damask_core_server</text>
+  <rect x="358" y="840" width="250" height="50" rx="16" class="soft-panel"/>
+  <text x="378" y="870" class="card-body">damask_preprocess_server</text>
+  <rect x="630" y="840" width="250" height="50" rx="16" class="soft-panel"/>
+  <text x="650" y="870" class="card-body">damask_runner_server</text>
+  <rect x="902" y="840" width="250" height="50" rx="16" class="soft-panel"/>
+  <text x="922" y="870" class="card-body">damask_postprocess_server</text>
+  <rect x="1174" y="840" width="250" height="50" rx="16" class="soft-panel"/>
+  <text x="1194" y="870" class="card-body">damask_misc_server</text>
+
+  <path d="M314 300 C336 300, 352 260, 352 242" class="flow-soft"/>
+  <path d="M1248 242 L1284 242" class="flow-soft"/>
+  <path d="M628 478 L682 478" class="flow"/>
+  <path d="M918 478 L972 478" class="flow"/>
+  <path d="M1090 524 C1090 560, 1090 590, 525 590" class="flow"/>
+  <path d="M630 679 L652 679" class="flow"/>
+  <path d="M802 679 L824 679" class="flow"/>
+  <path d="M1010 679 L1032 679" class="flow"/>
+  <path d="M1106 710 C1106 736, 1106 755, 1010 755" class="flow"/>
+  <path d="M652 755 C564 755, 525 755, 525 710" class="flow-dashed"/>
+  <path d="M800 786 L800 814" class="flow"/>
+  <path d="M1008 755 C1162 755, 1162 860, 918 860" class="flow-dashed"/>
+  <path d="M918 478 C1126 478, 1224 478, 1310 410" class="flow-soft"/>
+  <path d="M525 710 C525 748, 525 780, 288 780" class="flow-soft"/>
+  <path d="M918 679 C918 742, 918 776, 918 750" class="flow-soft"/>
+  <path d="M1106 679 C1106 732, 1106 748, 880 776" class="flow-soft"/>
+
+  <text x="430" y="798" class="mini">repair design or update parameters</text>
+  <text x="1078" y="742" class="mini">stop when evidence is sufficient</text>
+  <text x="86" y="958" class="mini">Presentation view based on `graph/workflow.py`, `graph/state.py`, `agents/*`, `memory/scientific_memory.py`, and `tools/*`. The diagram uses the label `cpdataset` for the parameter-prior layer.</text>
+</svg>

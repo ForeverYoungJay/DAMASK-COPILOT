@@ -1,4 +1,4 @@
-"""Conditional routing logic for the LangGraph research graph."""
+"""Conditional routing logic for legacy and v1 DAMASK research graphs."""
 
 from __future__ import annotations
 
@@ -34,3 +34,16 @@ def route_after_iteration_decider(state: DamaskResearchState) -> str:
     if should_continue and state.get("iteration", 0) < state.get("max_iterations", 1):
         return "simulation_planner"
     return "report_writer"
+
+
+def route_after_analysis_action(state) -> str:
+    """Route according to the v1 next_action payload."""
+    next_action = getattr(state, "next_action", None) or {}
+    action_type = next_action.get("type", "stop")
+    if action_type == "stop":
+        return "research_report"
+    if action_type in {"update_parameters", "run_more_simulations", "change_model"}:
+        return "simulation_designer"
+    if action_type == "request_human_review":
+        return "research_report"
+    return "research_report"

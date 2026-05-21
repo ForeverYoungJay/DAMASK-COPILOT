@@ -10,7 +10,7 @@ from damask_copilot.schemas.material import MaterialParameterCard
 
 
 class ParameterStore:
-    """Hybrid in-memory and file-backed store for material parameter cards."""
+    """Hybrid in-memory and file-backed store for demo material parameter cards."""
 
     def __init__(self, data_dir: Path | None = None) -> None:
         self.data_dir = data_dir or Path("data/materials")
@@ -20,6 +20,8 @@ class ParameterStore:
     def load_library(self) -> None:
         """Load the local demo material library into the store."""
         index_path = self.data_dir / "index.yaml"
+        if not index_path.exists():
+            return
         with index_path.open("r", encoding="utf-8") as handle:
             index_data = yaml.safe_load(handle) or {}
 

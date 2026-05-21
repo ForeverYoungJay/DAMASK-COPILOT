@@ -26,6 +26,7 @@ SERVER_REGISTRY: dict[str, dict[str, Any]] = {
             "create_simple_tension_load_yaml",
             "create_simple_compression_load_yaml",
             "create_material_yaml",
+            "create_material_yaml_from_template",
             "create_empty_material_yaml",
             "inspect_material_yaml",
             "validate_material_yaml",
@@ -39,6 +40,19 @@ SERVER_REGISTRY: dict[str, dict[str, Any]] = {
             "scale_grid",
             "renumber_grid",
             "clean_grid",
+        ],
+    },
+    "validation": {
+        "module": "damask_copilot.mcp_servers.damask_validation_server",
+        "tools": [
+            "validate_material_yaml_structure",
+            "validate_load_yaml_structure",
+            "inspect_geometry_material_indices",
+            "check_phase_homogenization_consistency",
+            "check_orientation_format",
+            "check_required_plasticity_parameters",
+            "check_material_indices",
+            "validate_simulation_setup",
         ],
     },
     "runner": {
@@ -87,6 +101,12 @@ SERVER_REGISTRY: dict[str, dict[str, Any]] = {
             "grid_ravel",
             "grid_unravel",
             "validate_regular_grid_coordinates",
+        ],
+    },
+    "unified": {
+        "module": "damask_copilot.mcp_servers.damask_server",
+        "tools": [
+            "describe_damask_mcp",
         ],
     },
 }

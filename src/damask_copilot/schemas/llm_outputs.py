@@ -4,12 +4,20 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from damask_copilot.schemas.project_plan import CandidateSimulation, EvidenceStatus
+
 
 class ResearchManagerOutput(BaseModel):
     """Structured output for research-goal inference."""
 
     material_system: str = Field(..., min_length=1)
     objective: str = Field(..., min_length=1)
+    workflow_type: str = Field(default="simulation_run", min_length=1)
+    needs_literature: bool = False
+    needs_experimental_data: bool = False
+    needs_damask_simulation: bool = True
+    needs_parameter_optimization: bool = False
+    needs_report: bool = True
     reasoning_summary: str = Field(..., min_length=1)
 
 
@@ -137,3 +145,30 @@ class ReportWriterOutput(BaseModel):
     executive_summary: str = Field(..., min_length=1)
     key_points: list[str] = Field(default_factory=list)
     next_recommended_simulations: list[str] = Field(default_factory=list)
+
+
+class ProjectPlannerHypothesisOutput(BaseModel):
+    """One project-level hypothesis proposed by the LLM planner."""
+
+    id: str = Field(..., min_length=1)
+    statement: str = Field(..., min_length=1)
+    evidence: list[str] = Field(default_factory=list)
+    validation_metric: str = Field(..., min_length=1)
+    type: str = Field(default="scientific_hypothesis", min_length=1)
+
+
+class ProjectPlannerOutput(BaseModel):
+    """Structured output for the v1 ProjectPlannerAgent."""
+
+    project_objective: str = Field(..., min_length=1)
+    research_questions: list[str] = Field(default_factory=list)
+    hypotheses: list[ProjectPlannerHypothesisOutput] = Field(default_factory=list)
+    evidence_status: list[EvidenceStatus] = Field(default_factory=list)
+    validation_metrics: list[str] = Field(default_factory=list)
+    calibration_strategy: dict[str, object] = Field(default_factory=dict)
+    candidate_simulations: list[CandidateSimulation] = Field(default_factory=list)
+    stopping_criteria: list[str] = Field(default_factory=list)
+    iteration_logic: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    deliverables: list[str] = Field(default_factory=list)
+    next_action: str = Field(default="simulation_designer", min_length=1)

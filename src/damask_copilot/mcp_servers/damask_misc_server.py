@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from damask_copilot.mcp_servers._fastmcp import FastMCP
 
 from damask_mcp_adapter.modules.grid_filter_tools import (
     grid_node_to_point as grid_node_to_point_impl,

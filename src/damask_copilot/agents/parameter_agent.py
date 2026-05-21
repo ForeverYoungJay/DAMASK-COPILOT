@@ -1,4 +1,4 @@
-"""Parameter aggregation agent."""
+"""Deprecated parameter micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ from copy import deepcopy
 import json
 from typing import Any
 
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.graph.materials_research_state import MaterialsResearchState, append_trace
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
@@ -15,7 +16,11 @@ from damask_copilot.schemas.material import MaterialParameterCard
 
 
 class ParameterAgent:
-    """Merge internal template parameters with user and literature inputs."""
+    """Deprecated wrapper for parameter aggregation.
+
+    The unified v1 architecture uses `ScientificKnowledgeAgent` and
+    `SimulationDesignerAgent` instead.
+    """
 
     name = "parameter_agent"
 
@@ -27,6 +32,10 @@ class ParameterAgent:
         model_name: str | None = None,
         llm_runner: StructuredLLMRunner | None = None,
     ) -> None:
+        warn_legacy_agent(
+            legacy_name="ParameterAgent",
+            replacement="ScientificKnowledgeAgent/SimulationDesignerAgent",
+        )
         self.store = store or ParameterStore()
         self.use_llm = use_llm
         self.model_name = model_name

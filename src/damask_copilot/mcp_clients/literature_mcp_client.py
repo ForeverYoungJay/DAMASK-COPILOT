@@ -175,6 +175,7 @@ class LiteratureMCPClient:
             except Exception as exc:
                 errors.append(f"{provider.name}: {type(exc).__name__}: {exc}")
                 continue
+            provider_items = [item for item in provider_items if self._is_usable_evidence_text(str(item.get("text") or ""))]
             if provider_items:
                 providers_succeeded.append(provider.name)
                 evidence_items.extend(provider_items)
@@ -197,7 +198,7 @@ class LiteratureMCPClient:
             "notes": notes,
             "summary": summary,
             "evidence_items": evidence_items,
-            "resolved_sources": [item.get("resolved_source") for item in evidence_items if item.get("resolved_source")],
+            "resolved_sources": self._resolved_sources_from_items(evidence_items),
             "uncertainties": errors,
         }
 
@@ -268,7 +269,15 @@ class LiteratureMCPClient:
                     items.append(self._make_item("semantic_scholar", "get_paper_details", identifier, text))
                     related_identifiers.extend(self._extract_semantic_scholar_identifiers(text))
         if "search_papers" in tool_names:
-            result = await session.call_tool("search_papers", {"query": user_query, "max_results": self.max_results})
+            result = await self._call_tool_with_fallbacks(
+                session,
+                "search_papers",
+                [
+                    {"query": user_query, "max_results": self.max_results},
+                    {"query": user_query, "limit": self.max_results},
+                    {"query": user_query},
+                ],
+            )
             text = self._tool_result_text(result)
             if text:
                 items.append(self._make_item("semantic_scholar", "search_papers", user_query, text))
@@ -281,8 +290,17 @@ class LiteratureMCPClient:
                 text = self._tool_result_text(result)
                 if text:
                     items.append(self._make_item("semantic_scholar", "get_paper_details", identifier, text))
-        if "get_paper_references" in tool_names and items:
-            source_id = items[0]["resolved_source"]
+        if "get_paper_references" in tool_names:
+            source_id = next(
+                (
+                    item["resolved_source"]
+                    for item in items
+                    if self._looks_like_structured_source_reference(str(item.get("resolved_source") or ""))
+                ),
+                None,
+            )
+            if source_id is None:
+                return items
             result = await session.call_tool("get_paper_references", {"paper_id": source_id})
             text = self._tool_result_text(result)
             if text:
@@ -346,7 +364,15 @@ class LiteratureMCPClient:
         items: list[dict[str, Any]] = []
         paper_ids: list[str] = []
         if "search_papers" in tool_names:
-            result = await session.call_tool("search_papers", {"query": user_query, "max_results": self.max_results})
+            result = await self._call_tool_with_fallbacks(
+                session,
+                "search_papers",
+                [
+                    {"query": user_query, "max_results": self.max_results},
+                    {"query": user_query, "limit": self.max_results},
+                    {"query": user_query},
+                ],
+            )
             text = self._tool_result_text(result)
             if text:
                 items.append(self._make_item("arxiv", "search_papers", user_query, text))
@@ -423,6 +449,81 @@ class LiteratureMCPClient:
             "resolved_source": resolved_source,
             "text": text[:20000],
         }
+
+    @staticmethod
+    async def _call_tool_with_fallbacks(session: ClientSession, tool_name: str, attempts: list[dict[str, Any]]) -> Any:
+        last_error: Exception | None = None
+        for payload in attempts:
+            try:
+                return await session.call_tool(tool_name, payload)
+            except Exception as exc:
+                last_error = exc
+                message = str(exc).lower()
+                if "unexpected keyword" not in message and "validation error" not in message:
+                    raise
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError(f"No payload attempts were provided for {tool_name}.")
+
+    @classmethod
+    def _resolved_sources_from_items(cls, items: list[dict[str, Any]]) -> list[str]:
+        resolved: list[str] = []
+        for item in items:
+            source = cls._normalize_source_reference(str(item.get("resolved_source") or ""))
+            if source and source not in resolved:
+                resolved.append(source)
+                continue
+            for extracted in cls._extract_source_references_from_text(str(item.get("text") or "")):
+                normalized = cls._normalize_source_reference(extracted)
+                if normalized and normalized not in resolved:
+                    resolved.append(normalized)
+        return resolved
+
+    @classmethod
+    def _extract_source_references_from_text(cls, text: str) -> list[str]:
+        refs: list[str] = []
+        for doi in cls._extract_dois(text):
+            refs.append(f"DOI:{doi}")
+        for arxiv_id in cls._extract_arxiv_ids(text):
+            refs.append(f"ARXIV:{arxiv_id}")
+        return cls._unique_preserve_order(refs)
+
+    @staticmethod
+    def _is_usable_evidence_text(text: str) -> bool:
+        lowered = text.lower().strip()
+        if not lowered:
+            return False
+        failure_tokens = [
+            "validation error for call",
+            "unexpected keyword argument",
+            "paper not found",
+            "result set was empty",
+            "rate limiting",
+            "\"error\"",
+            "error:",
+        ]
+        return not any(token in lowered for token in failure_tokens)
+
+    @classmethod
+    def _looks_like_structured_source_reference(cls, value: str) -> bool:
+        return cls._normalize_source_reference(value) is not None
+
+    @classmethod
+    def _normalize_source_reference(cls, value: str) -> str | None:
+        text = value.strip()
+        if not text:
+            return None
+        doi = cls._extract_doi(text)
+        if doi:
+            return f"DOI:{doi}"
+        arxiv_id = cls._extract_arxiv_id(text)
+        if arxiv_id:
+            return f"ARXIV:{arxiv_id}"
+        if text.startswith(("http://", "https://")):
+            return text
+        if "/" in text and Path(text).suffix:
+            return text
+        return None
 
     @staticmethod
     def _unique_preserve_order(items: list[str]) -> list[str]:

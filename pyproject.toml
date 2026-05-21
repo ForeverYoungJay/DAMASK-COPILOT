@@ -5,10 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "damask-copilot"
 version = "0.1.0"
-description = "Minimal MCP servers for safe DAMASK pre- and post-processing helpers."
+description = "FastMCP servers for safe DAMASK preprocessing, validation, execution, and post-processing."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+  "fastmcp>=2.2",
   "mcp",
   "pydantic",
   "pyyaml",
@@ -24,6 +25,7 @@ dependencies = [
 
 [project.scripts]
 damask-copilot = "damask_copilot.cli:main"
+damask-mcp = "damask_copilot.mcp_servers.damask_server:main"
 
 [project.optional-dependencies]
 dev = [

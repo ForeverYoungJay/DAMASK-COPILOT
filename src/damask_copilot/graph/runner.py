@@ -1,16 +1,17 @@
-"""Runtime helper for the primary LangGraph DAMASK research graph."""
+"""Runtime helper for the unified v1 DAMASK research workflow."""
 
 from __future__ import annotations
 
-import uuid
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from damask_copilot.graph.graph import build_damask_research_graph
-from damask_copilot.graph.state import DamaskResearchState, create_initial_state
+from damask_copilot.graph.workflow import run_workflow
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
+from damask_copilot.schemas.checker_report import CheckerReport
+from damask_copilot.schemas.postprocess_report import PostprocessReport
+from damask_copilot.schemas.run_report import RunReport
 
 
 def run_research_graph(
@@ -27,8 +28,8 @@ def run_research_graph(
     llm_runner: StructuredLLMRunner | None = None,
     agent_overrides: dict[str, Any] | None = None,
     stream: bool = True,
-) -> DamaskResearchState:
-    """Run the LangGraph research graph and return the final state."""
+) -> dict[str, Any]:
+    """Run the unified v1 workflow and return a compatibility dictionary."""
     query, resolved_mode, resolved_use_llm, resolved_model, resolved_max_iterations = _resolve_input(
         user_query=user_query,
         mode=mode,
@@ -36,30 +37,20 @@ def run_research_graph(
         model=model,
         max_iterations=max_iterations,
     )
-    initial_state = create_initial_state(
-        user_query=query,
-        mode=resolved_mode,
-        use_llm=resolved_use_llm,
-        model=resolved_model,
+    final_state = run_workflow(
+        user_goal=query,
+        workflow_type=None,
         max_iterations=resolved_max_iterations,
-        explicit_approval=approve,
-        allow_overwrite=allow_overwrite,
-    )
-    app = build_damask_research_graph(
-        checkpoint=checkpoint,
+        mode=resolved_mode,
         use_llm=resolved_use_llm,
         model=resolved_model,
         llm_runner=llm_runner,
         agent_overrides=agent_overrides,
     )
-    config = {"configurable": {"thread_id": thread_id or f"damask-copilot-{uuid.uuid4()}"}}
     if stream:
-        for update in app.stream(initial_state, config=config, stream_mode="updates"):
-            for node_name, node_update in update.items():
-                print(f"[{node_name}] updated: {_describe_node_update(node_update)}")
-        snapshot = app.get_state(config)
-        return snapshot.values
-    return app.invoke(initial_state, config=config)
+        for item in final_state.trace:
+            print(f"[{item.get('agent')}] updated: {item.get('event')}")
+    return _to_compat_state(final_state, approve=approve)
 
 
 def _resolve_input(
@@ -90,3 +81,58 @@ def _describe_node_update(node_update: Any) -> str:
     if isinstance(node_update, (list, tuple)):
         return f"{type(node_update).__name__}(len={len(node_update)})"
     return type(node_update).__name__
+
+
+def _to_compat_state(state, *, approve: bool) -> dict[str, Any]:
+    validation = state.validation_result or {}
+    run_result = state.run_result or {}
+    postprocess = state.postprocessing_result or {}
+    checker_report = state.checker_report or (
+        CheckerReport(
+            ok=validation.get("ok", False),
+            status="passed" if validation.get("ok", False) else "blocked",
+            errors=list(validation.get("errors", [])),
+            warnings=list(validation.get("warnings", [])),
+        )
+        if validation
+        else None
+    )
+    run_report = state.run_report or (
+        RunReport(
+            ok=run_result.get("ok", False),
+            status=run_result.get("status", "skipped"),
+            log_file=run_result.get("log_path"),
+            result_files=list(run_result.get("result_files", [])),
+            message=run_result.get("message") or run_result.get("error"),
+        )
+        if run_result
+        else None
+    )
+    postprocess_report = state.postprocess_report or (
+        PostprocessReport(
+            ok=postprocess.get("ok", False),
+            status=postprocess.get("status", "not_available"),
+            result_file=(run_result.get("result_files") or [None])[0],
+            summary=postprocess.get("error") or "v1 post-processing completed.",
+            warnings=[],
+        )
+        if postprocess
+        else None
+    )
+    report_path = state.report_path or (str(Path(state.workspace) / "research_report.md") if state.workspace else None)
+    return {
+        "user_query": state.user_goal,
+        "mode": state.mode,
+        "use_llm": state.use_llm,
+        "model": state.model,
+        "iteration": state.iteration,
+        "max_iterations": state.max_iterations,
+        "checker_report": checker_report,
+        "run_report": run_report,
+        "postprocess_report": postprocess_report,
+        "approval_status": "approved" if state.mode in {"smoke_test", "full_run"} or approve else "not_required",
+        "report_path": report_path,
+        "final_report": state.final_report,
+        "trace": list(state.trace),
+        "next_action": state.next_action,
+    }

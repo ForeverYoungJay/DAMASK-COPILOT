@@ -1,4 +1,4 @@
-"""DAMASK input builder agent."""
+"""Deprecated DAMASK input-builder micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.agents.base import BaseAgent
 from damask_copilot.mcp_clients.damask_preprocess_client import DAMASKPreprocessClient
 from damask_copilot.schemas.files import GeneratedFiles
@@ -15,11 +16,16 @@ from damask_copilot.schemas.research_state import ResearchState
 
 
 class DAMASKInputBuilderAgent(BaseAgent):
-    """Generate DAMASK dry-run input files through the local adapter layer."""
+    """Deprecated wrapper for input generation.
+
+    The unified v1 architecture uses `SimulationDesignerAgent` plus
+    deterministic tools in `damask_copilot.tools`.
+    """
 
     name = "input_builder"
 
     def __init__(self, workspace_root: Path | None = None, preprocess_client: DAMASKPreprocessClient | None = None) -> None:
+        warn_legacy_agent(legacy_name="DAMASKInputBuilderAgent", replacement="SimulationDesignerAgent")
         self.workspace_root = workspace_root or Path("workspaces")
         self.preprocess_client = preprocess_client or DAMASKPreprocessClient()
 

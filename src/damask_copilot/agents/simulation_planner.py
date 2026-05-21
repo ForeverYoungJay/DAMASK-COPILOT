@@ -1,10 +1,11 @@
-"""Simulation planner agent."""
+"""Deprecated simulation-planner micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
 import re
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
 from damask_copilot.schemas.llm_outputs import SimulationPlannerOutput
@@ -14,11 +15,15 @@ from damask_copilot.schemas.simulation_plan import GeometrySpec, LoadingSpec, Si
 
 
 class SimulationPlannerAgent(BaseAgent):
-    """Create a deterministic smoke-test plan."""
+    """Deprecated wrapper for simulation planning.
+
+    The unified v1 architecture uses `SimulationDesignerAgent` instead.
+    """
 
     name = "simulation_planner"
 
     def __init__(self, *, use_llm: bool = False, model_name: str | None = None, llm_runner: StructuredLLMRunner | None = None) -> None:
+        warn_legacy_agent(legacy_name="SimulationPlannerAgent", replacement="SimulationDesignerAgent")
         self.use_llm = use_llm
         self.model_name = model_name
         self.llm_runner = llm_runner

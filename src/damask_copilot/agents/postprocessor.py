@@ -1,21 +1,30 @@
-"""Post-processing agent."""
+"""Deprecated post-processing micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 from damask_copilot.agents.base import BaseAgent
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.mcp_clients.damask_postprocess_client import DAMASKPostprocessClient
 from damask_copilot.schemas.postprocess_report import PostprocessReport
 from damask_copilot.schemas.research_state import ResearchState
 
 
 class PostProcessingAgent(BaseAgent):
-    """Inspect available results and extract smoke-test outputs."""
+    """Deprecated wrapper for post-processing.
+
+    The unified v1 architecture uses deterministic post-processing tools and
+    `AnalysisAndCriticAgent`.
+    """
 
     name = "postprocessor"
 
     def __init__(self, postprocess_client: DAMASKPostprocessClient | None = None) -> None:
+        warn_legacy_agent(
+            legacy_name="PostProcessingAgent",
+            replacement="damask_copilot.tools.postprocessing/AnalysisAndCriticAgent",
+        )
         self.postprocess_client = postprocess_client or DAMASKPostprocessClient()
 
     def run(self, state: ResearchState) -> ResearchState:

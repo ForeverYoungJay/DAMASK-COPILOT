@@ -1,0 +1,17 @@
+case_name: ni3al_l12_single_crystal_tensile
+material_system: ni3al_l12
+description: Single-crystal Ni3Al tensile-test specimens with initial orientations.
+source_directory: /Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/master/Data-Ni3Al-SG-tensile-test
+specimens:
+  - specimen_id: Ni3Al17-A1
+    raw_file: projects/ni3al_l12/experimental/single_crystal_tensile/raw/Ni3Al17-A1.txt
+    initial_orientation_quaternion: [0.30802016, -0.58867263, -0.03754676, -0.7464438]
+    notes: Single tensile test result provided by user.
+  - specimen_id: Ni3Al19-7
+    raw_file: projects/ni3al_l12/experimental/single_crystal_tensile/raw/Ni3Al19-7.txt
+    initial_orientation_quaternion: [0.03167707, -0.71047656, 0.24546922, 0.65875981]
+    notes: Single tensile test result provided by user.
+  - specimen_id: Ni3Al25011B1
+    raw_file: projects/ni3al_l12/experimental/single_crystal_tensile/raw/Ni3Al25011B1.txt
+    initial_orientation_quaternion: [0.19613502, -0.6147098, -0.33642317, -0.68591717]
+    notes: Single tensile test result provided by user.

@@ -174,6 +174,34 @@ def test_literature_client_defaults_to_auto_search_enabled():
     assert client.auto_search is True
 
 
+def test_literature_client_drops_query_noise_and_error_items_from_resolved_sources():
+    items = [
+        {
+            "provider": "semantic_scholar",
+            "tool": "search_papers",
+            "resolved_source": "Study FCC aluminum under uniaxial tension",
+            "text": "validation error for call[search_papers]",
+        },
+        {
+            "provider": "semantic_scholar",
+            "tool": "get_paper_details",
+            "resolved_source": "DOI:10.1000/example",
+            "text": "Slip-controlled plasticity was reported for FCC aluminum.",
+        },
+        {
+            "provider": "arxiv",
+            "tool": "read_paper",
+            "resolved_source": "1706.03762",
+            "text": "Preprint text with arXiv:1706.03762 and orientation-sensitive response.",
+        },
+    ]
+
+    usable = [item for item in items if LiteratureMCPClient._is_usable_evidence_text(item["text"])]
+    resolved = LiteratureMCPClient._resolved_sources_from_items(usable)
+
+    assert resolved == ["DOI:10.1000/example", "ARXIV:1706.03762"]
+
+
 def test_literature_agent_reads_local_literature_files(tmp_path):
     note_path = tmp_path / "reading_notes.md"
     note_path.write_text(

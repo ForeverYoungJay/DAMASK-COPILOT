@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from damask_copilot.mcp_servers._fastmcp import FastMCP
 
 from damask_mcp_adapter.modules.runner import (
     collect_result_files as collect_result_files_impl,

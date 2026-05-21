@@ -6,10 +6,12 @@ import json
 import re
 from pathlib import Path
 
+from damask_copilot.graph.state import ResearchState as WorkflowResearchState
 from damask_copilot.graph.materials_research_state import MaterialsResearchState, append_trace
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
 from damask_copilot.schemas.llm_outputs import ReportWriterOutput
+from damask_copilot.tools.postprocessing import plot_stress_strain
 
 
 class ResearchReportAgent:
@@ -28,7 +30,9 @@ class ResearchReportAgent:
         self.model_name = model_name
         self.llm_runner = llm_runner
 
-    def run(self, state: MaterialsResearchState) -> MaterialsResearchState:
+    def run(self, state):
+        if isinstance(state, WorkflowResearchState):
+            return self._run_v1(state)
         report_path = self._resolve_report_path(state)
         report_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -162,6 +166,64 @@ class ResearchReportAgent:
         updated["final_report"] = markdown
         return append_trace(updated, self.name, "research_report_written", {"report_path": str(report_path)})
 
+    def _run_v1(self, state: WorkflowResearchState) -> WorkflowResearchState:
+        report_path = self._resolve_v1_report_path(state)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        llm_summary = self._llm_summary_v1(state) if (self.use_llm or state.use_llm) else None
+        title = llm_summary.title if llm_summary is not None and llm_summary.title else "DAMASK Copilot Research Report"
+        lines = [f"# {title}", ""]
+        if llm_summary is not None:
+            lines.extend(["## Executive Summary", llm_summary.executive_summary, "", "## Key Points"])
+            lines.extend([f"- {item}" for item in (llm_summary.key_points or ["None"])])
+            lines.append("")
+        figure_path = self._write_v1_figure_if_possible(state, report_path)
+        lines.extend(
+            [
+                "## Research Goal",
+                f"- Goal: {state.user_goal}",
+                f"- Workflow type: {state.workflow_type}",
+                f"- Material system: {state.material_system}",
+                "",
+                "## Knowledge Summary",
+                *self._render_v1_knowledge_summary(state),
+                "",
+                "## Project Plan",
+                *self._render_v1_project_plan(state),
+                "",
+                "## Simulation Summary",
+                *self._render_v1_simulation_summary(state),
+                "",
+                "## Parameter Table",
+                *self._render_v1_parameter_table(state),
+                "",
+                "## Generated DAMASK Inputs",
+                f"- material.yaml: {state.material_yaml_path}",
+                f"- load.yaml: {state.load_yaml_path}",
+                f"- geometry: {state.geometry_path}",
+                f"- numerics.yaml: {state.numerics_yaml_path}",
+                "",
+                "## Validation and Execution",
+                *self._render_v1_validation_and_execution(state),
+                "",
+                "## Experiment-Simulation Comparison",
+                *self._render_v1_experiment_comparison(state, figure_path),
+                "",
+                "## Scientific Interpretation",
+                *self._render_v1_scientific_interpretation(state),
+                "",
+                "## Limitations",
+                *self._render_v1_limitations(state),
+                "",
+                "## Next-Step Recommendation",
+                *self._render_v1_next_steps(state, llm_summary),
+            ]
+        )
+        markdown = "\n".join(lines) + "\n"
+        report_path.write_text(markdown, encoding="utf-8")
+        state.final_report = markdown
+        state.report_path = str(report_path)
+        return state.append_trace(self.name, "research_report_written_v1", {"report_path": str(report_path)})
+
     def _resolve_report_path(self, state: MaterialsResearchState) -> Path:
         generated_files = state.get("generated_files")
         report_path = None
@@ -175,6 +237,24 @@ class ResearchReportAgent:
         if workspace:
             return Path(workspace) / "research_report.md"
         return Path("workspaces") / "materials_research_report.md"
+
+    def _resolve_v1_report_path(self, state: WorkflowResearchState) -> Path:
+        if state.workspace:
+            return Path(state.workspace) / "research_report.md"
+        return Path("workspaces") / "research_report.md"
+
+    def _write_v1_figure_if_possible(self, state: WorkflowResearchState, report_path: Path) -> str | None:
+        sim_curve = dict((state.postprocessing_result or {}).get("curve") or {})
+        exp_curve = dict((state.experimental_data or {}).get("curve") or {})
+        if not sim_curve.get("strain") or not sim_curve.get("stress"):
+            return None
+        if not exp_curve.get("strain") or not exp_curve.get("stress"):
+            return None
+        try:
+            figure_path = report_path.with_name("stress_strain_comparison.png")
+            return plot_stress_strain(sim_curve, exp_curve, str(figure_path))
+        except Exception:
+            return None
 
     def _llm_summary(self, state: MaterialsResearchState) -> ReportWriterOutput | None:
         try:
@@ -200,6 +280,171 @@ class ResearchReportAgent:
             )
         except Exception:
             return None
+
+    def _llm_summary_v1(self, state: WorkflowResearchState) -> ReportWriterOutput | None:
+        runner = self.llm_runner or StructuredLLMRunner(model_name=state.model or self.model_name)
+        try:
+            return runner.run_structured(
+                prompt_name="research_report",
+                system_prompt=load_prompt("research_report"),
+                user_prompt=(
+                    f"User query: {state.user_goal}\n"
+                    f"Workflow type: {state.workflow_type}\n"
+                    f"Material system: {state.material_system}\n"
+                    f"Literature summary: {state.literature_summary}\n"
+                    f"Project plan: {state.project_plan}\n"
+                    f"Simulation spec: {state.simulation_spec}\n"
+                    f"Validation result: {state.validation_result}\n"
+                    f"Run result: {state.run_result}\n"
+                    f"Postprocessing result: {state.postprocessing_result}\n"
+                    f"Critique: {state.critique}\n"
+                ),
+                output_schema=ReportWriterOutput,
+                model_name=state.model or self.model_name,
+            )
+        except KeyError:
+            mock_outputs = getattr(runner, "mock_outputs", {})
+            if "report_writer" not in mock_outputs:
+                return None
+            try:
+                return ReportWriterOutput.model_validate(mock_outputs["report_writer"])
+            except Exception:
+                return None
+        except Exception:
+            return None
+
+    def _render_v1_knowledge_summary(self, state: WorkflowResearchState) -> list[str]:
+        literature = dict(state.literature_summary or {})
+        parameters = dict(state.known_parameters or {})
+        capabilities = dict(state.damask_capabilities or {})
+        return [
+            f"- Literature summary: {literature.get('summary') or 'No literature summary is available.'}",
+            f"- Literature sources: {self._display_list(literature.get('sources'))}",
+            f"- CP parameter priors available: {self._display_list(parameters.get('reported_cp_parameters', {}).keys() if isinstance(parameters.get('reported_cp_parameters'), dict) else [])}",
+            f"- Elastic constants available: {self._display_list((parameters.get('elastic_constants') or {}).keys() if isinstance(parameters.get('elastic_constants'), dict) else [])}",
+            f"- DAMASK solver tools: {self._display_list(capabilities.get('solver_features') or capabilities.get('execution_tools'))}",
+        ]
+
+    def _render_v1_project_plan(self, state: WorkflowResearchState) -> list[str]:
+        project_plan = dict(state.project_plan or {})
+        hypotheses = list(state.hypotheses or [])
+        if not project_plan and not hypotheses:
+            return ["- No project plan is available."]
+        lines = [
+            f"- Objective: {project_plan.get('project_objective') or state.objective or 'Not specified'}",
+            f"- Validation metrics: {self._display_list(project_plan.get('validation_metrics'))}",
+            f"- Calibration strategy: {project_plan.get('calibration_strategy') or 'Not specified'}",
+            f"- Stopping criteria: {self._display_list(project_plan.get('stopping_criteria'))}",
+            f"- Candidate simulations: {self._display_list([item.get('simulation_id', 'unknown') for item in project_plan.get('candidate_simulations', [])])}",
+        ]
+        if hypotheses:
+            lines.append("- Hypotheses:")
+            for item in hypotheses:
+                lines.append(f"  - {item.get('id', 'H?')}: {item.get('statement', 'No statement provided.')}")
+        return lines
+
+    def _render_v1_simulation_summary(self, state: WorkflowResearchState) -> list[str]:
+        spec = dict(state.simulation_spec or {})
+        return [
+            f"- Task type: {spec.get('task_type') or state.workflow_type or 'simulation_run'}",
+            f"- Solver / model: {spec.get('solver_type') or spec.get('constitutive_model') or spec.get('modeling_strategy') or 'Not specified'}",
+            f"- Geometry strategy: {spec.get('geometry_strategy') or spec.get('geometry_type') or 'Not specified'}",
+            f"- Loading mode: {spec.get('loading_mode') or 'Not specified'}",
+            f"- Expected observables: {self._display_list(spec.get('expected_observables'))}",
+            f"- Workspace: {state.workspace or 'workspaces/'}",
+        ]
+
+    def _render_v1_parameter_table(self, state: WorkflowResearchState) -> list[str]:
+        spec = dict(state.simulation_spec or {})
+        parameter_values = dict(spec.get("parameter_values") or {})
+        parameter_ranges = dict(spec.get("parameter_ranges") or {})
+        if not parameter_values and not parameter_ranges:
+            parameters = dict(state.known_parameters or {})
+            parameter_values = dict(parameters.get("cp_parameters") or parameters.get("reported_cp_parameters") or {})
+        if not parameter_values and not parameter_ranges:
+            return ["- No parameter set was recorded for this run."]
+        lines = ["- Parameter | Value | Range"]
+        for key in sorted(set(parameter_values) | set(parameter_ranges)):
+            value = parameter_values.get(key, "n/a")
+            value_repr = json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else str(value)
+            range_value = parameter_ranges.get(key, "n/a")
+            range_repr = json.dumps(range_value, ensure_ascii=False) if isinstance(range_value, (dict, list)) else str(range_value)
+            lines.append(f"- `{key}` | `{value_repr}` | `{range_repr}`")
+        return lines
+
+    def _render_v1_validation_and_execution(self, state: WorkflowResearchState) -> list[str]:
+        validation = dict(state.validation_result or {})
+        run_result = dict(state.run_result or {})
+        postprocess = dict(state.postprocessing_result or {})
+        return [
+            f"- Validation status: {validation.get('ok', False)}",
+            f"- Validation warnings: {self._display_list(validation.get('warnings'))}",
+            f"- Validation errors: {self._display_list(validation.get('errors'))}",
+            f"- Run status: {run_result.get('status', 'not_available')}",
+            f"- Result files: {self._display_list(run_result.get('result_files'))}",
+            f"- Failure category: {run_result.get('failure_category') or 'None'}",
+            f"- Post-processing status: {postprocess.get('status', 'not_available')}",
+        ]
+
+    def _render_v1_experiment_comparison(self, state: WorkflowResearchState, figure_path: str | None) -> list[str]:
+        alignment = dict(state.alignment_result or {})
+        metrics = dict(alignment.get("metrics") or {})
+        lines = [
+            f"- Status: {alignment.get('status', 'not_available')}",
+            f"- Summary: {alignment.get('summary') or 'No experiment-simulation comparison is available.'}",
+            f"- Compared observables: {self._display_list(alignment.get('compared_observables'))}",
+        ]
+        if metrics:
+            lines.extend(
+                [
+                    f"- RMSE: {metrics.get('rmse', 'n/a')}",
+                    f"- Max abs error: {metrics.get('max_abs_error', 'n/a')}",
+                    f"- Aligned points: {metrics.get('aligned_points', 'n/a')}",
+                ]
+            )
+        if figure_path is not None:
+            lines.append(f"- Figure: {figure_path}")
+        else:
+            lines.append("- Figure: not generated")
+        return lines
+
+    def _render_v1_scientific_interpretation(self, state: WorkflowResearchState) -> list[str]:
+        critique = dict(state.critique or {})
+        lines = [
+            f"- Summary: {critique.get('summary') or 'No scientific interpretation is available.'}",
+            f"- Physical validity: {critique.get('physical_validity') or 'not_available'}",
+            f"- Confidence: {critique.get('confidence') or 'not_available'}",
+        ]
+        key_findings = list(critique.get("key_findings") or [])
+        if key_findings:
+            lines.append("- Key findings:")
+            for item in key_findings:
+                lines.append(f"  - {item}")
+        mismatch = dict(critique.get("mismatch_analysis") or {})
+        if mismatch:
+            lines.append(f"- Mismatch analysis: `{json.dumps(mismatch, ensure_ascii=False)}`")
+        return lines
+
+    def _render_v1_limitations(self, state: WorkflowResearchState) -> list[str]:
+        critique = dict(state.critique or {})
+        limitations = list(critique.get("limitations") or [])
+        if not limitations:
+            return ["- No explicit limitations were recorded."]
+        return [f"- {item}" for item in limitations]
+
+    def _render_v1_next_steps(self, state: WorkflowResearchState, llm_summary: ReportWriterOutput | None) -> list[str]:
+        critique = dict(state.critique or {})
+        recommendations = list(critique.get("recommended_actions") or [])
+        if state.next_action is not None:
+            recommendations.append(
+                f"Workflow next action: {state.next_action.get('type', 'stop')} ({state.next_action.get('reason', 'No reason provided.')})"
+            )
+        recommendations.append(f"Parameter history entries: {len(state.parameter_history)}")
+        recommendations.append(f"Iterations completed: {state.iteration}")
+        if llm_summary is not None:
+            recommendations.extend(llm_summary.next_recommended_simulations or [])
+        deduped = self._dedupe_semantic_list(recommendations)
+        return [f"- {item}" for item in deduped] if deduped else ["- No follow-up recommendation is available."]
 
     @staticmethod
     def _to_jsonable(value):

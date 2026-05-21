@@ -1,6 +1,6 @@
 # DAMASK Copilot
 
-Workflow-focused MCP adapters for the local DAMASK 3.0.2 Python source tree.
+Workflow-focused FastMCP adapters for the local DAMASK 3.0.2 Python source tree.
 
 ## Architecture
 
@@ -8,6 +8,7 @@ The project intentionally does not expose every DAMASK symbol as an MCP tool. In
 
 - DAMASK installation and API inspection
 - preprocessing and YAML generation
+- simulation input validation
 - controlled `DAMASK_grid` execution
 - result inspection and export
 - miscellaneous table, utility, and regular-grid helpers
@@ -29,13 +30,15 @@ Compatibility and workflow modules:
 - `src/damask_mcp_adapter/modules/tensor.py`
 - `src/damask_mcp_adapter/modules/runner.py`
 
-Thin MCP servers:
+FastMCP servers:
 
 - `src/damask_copilot/mcp_servers/damask_core_server.py`
 - `src/damask_copilot/mcp_servers/damask_preprocess_server.py`
+- `src/damask_copilot/mcp_servers/damask_validation_server.py`
 - `src/damask_copilot/mcp_servers/damask_runner_server.py`
 - `src/damask_copilot/mcp_servers/damask_postprocess_server.py`
 - `src/damask_copilot/mcp_servers/damask_misc_server.py`
+- `src/damask_copilot/mcp_servers/damask_server.py`
 
 ## Safety Rules
 
@@ -73,6 +76,7 @@ The MCP tools are grouped by the official DAMASK processing-tools documentation:
   - `create_simple_tension_load_yaml`
   - `create_simple_compression_load_yaml`
   - `create_material_yaml`
+  - `create_material_yaml_from_template`
   - `validate_yaml_file`
   - `create_empty_material_yaml`
   - `inspect_material_yaml`
@@ -87,6 +91,15 @@ The MCP tools are grouped by the official DAMASK processing-tools documentation:
   - `scale_grid`
   - `renumber_grid`
   - `clean_grid`
+- Validation:
+  - `validate_material_yaml_structure`
+  - `validate_load_yaml_structure`
+  - `inspect_geometry_material_indices`
+  - `check_phase_homogenization_consistency`
+  - `check_orientation_format`
+  - `check_required_plasticity_parameters`
+  - `check_material_indices`
+  - `validate_simulation_setup`
 - Runner:
   - `find_damask_executables`
   - `run_damask_grid`
@@ -141,6 +154,20 @@ The adapter imports DAMASK directly from the local source tree at `./damask-3.0.
 
 ## Run MCP Servers
 
+Unified server:
+
+```bash
+python3 -m damask_copilot.mcp_servers.damask_server
+```
+
+Or via the console script:
+
+```bash
+damask-mcp
+```
+
+Split servers remain available when you want finer-grained registration:
+
 Core:
 
 ```bash
@@ -151,6 +178,12 @@ Preprocess:
 
 ```bash
 python3 -m damask_copilot.mcp_servers.damask_preprocess_server
+```
+
+Validation:
+
+```bash
+python3 -m damask_copilot.mcp_servers.damask_validation_server
 ```
 
 Runner:
@@ -176,6 +209,16 @@ python3 -m damask_copilot.mcp_servers.damask_misc_server
 Example `.codex/config.toml`:
 
 ```toml
+[mcp_servers.damask]
+command = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/.venv/bin/python"
+args = ["-m", "damask_copilot.mcp_servers.damask_server"]
+cwd = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT"
+startup_timeout_sec = 30
+tool_timeout_sec = 3600
+
+[mcp_servers.damask.env]
+PYTHONPATH = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/src"
+
 [mcp_servers.damask-core]
 command = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/.venv/bin/python"
 args = ["-m", "damask_copilot.mcp_servers.damask_core_server"]
@@ -194,6 +237,16 @@ startup_timeout_sec = 30
 tool_timeout_sec = 120
 
 [mcp_servers.damask-preprocess.env]
+PYTHONPATH = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/src"
+
+[mcp_servers.damask-validation]
+command = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/.venv/bin/python"
+args = ["-m", "damask_copilot.mcp_servers.damask_validation_server"]
+cwd = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT"
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+
+[mcp_servers.damask-validation.env]
 PYTHONPATH = "/Users/yang/Library/CloudStorage/OneDrive-国立研究開発法人物質・材料研究機構/自分/DAMASK COPILOT/src"
 
 [mcp_servers.damask-runner]

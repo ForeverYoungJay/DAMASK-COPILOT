@@ -1,10 +1,17 @@
-"""Node factories for the generic materials research graph."""
+"""Node factories for the generic materials research graph.
+
+This module still exposes the legacy/hybrid node builder for compatibility, but
+the preferred v1 architecture is the 7-agent workflow in
+`damask_copilot.graph.workflow`.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Callable
 
+from damask_copilot.agents.analysis_critic import AnalysisAndCriticAgent
+from damask_copilot.agents.damask_execution import DAMASKExecutionAgent
 from damask_copilot.agents.damask_input_builder import DAMASKInputBuilderAgent
 from damask_copilot.agents.experiment_simulation_alignment import ExperimentSimulationAlignmentAgent
 from damask_copilot.agents.experimental_data_agent import ExperimentalDataAgent
@@ -16,11 +23,14 @@ from damask_copilot.agents.material_knowledge import MaterialKnowledgeAgent
 from damask_copilot.agents.modeling_strategy_agent import ModelingStrategyAgent
 from damask_copilot.agents.parameter_agent import ParameterAgent
 from damask_copilot.agents.postprocessor import PostProcessingAgent
+from damask_copilot.agents.project_planner import ProjectPlannerAgent
 from damask_copilot.agents.research_manager import ResearchManagerAgent
 from damask_copilot.agents.research_project_planner import ResearchProjectPlannerAgent
 from damask_copilot.agents.research_report import ResearchReportAgent
+from damask_copilot.agents.scientific_knowledge import ScientificKnowledgeAgent
 from damask_copilot.agents.scientific_critic import ScientificCriticAgent
 from damask_copilot.agents.simulation_checker import SimulationCheckerAgent
+from damask_copilot.agents.simulation_designer import SimulationDesignerAgent
 from damask_copilot.agents.simulation_planner import SimulationPlannerAgent
 from damask_copilot.agents.simulation_runner import SimulationRunnerAgent
 from damask_copilot.graph.materials_research_state import (
@@ -31,6 +41,24 @@ from damask_copilot.graph.materials_research_state import (
     materials_state_from_legacy,
 )
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
+
+
+def build_v1_materials_research_nodes(
+    *,
+    use_llm: bool = False,
+    model: str | None = None,
+    llm_runner: StructuredLLMRunner | None = None,
+) -> dict[str, Any]:
+    """Build the preferred 7-agent v1 node mapping."""
+    return {
+        "research_manager": ResearchManagerAgent(use_llm=use_llm, model_name=model, llm_runner=llm_runner),
+        "scientific_knowledge": ScientificKnowledgeAgent(use_llm=use_llm, model_name=model, llm_runner=llm_runner),
+        "project_planner": ProjectPlannerAgent(use_llm=use_llm, model_name=model, llm_runner=llm_runner),
+        "simulation_designer": SimulationDesignerAgent(),
+        "damask_execution": DAMASKExecutionAgent(),
+        "analysis_critic": AnalysisAndCriticAgent(use_llm=use_llm, model_name=model, llm_runner=llm_runner),
+        "research_report": ResearchReportAgent(use_llm=use_llm, model_name=model, llm_runner=llm_runner),
+    }
 
 
 def build_materials_research_nodes(

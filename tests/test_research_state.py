@@ -1,3 +1,4 @@
+from damask_copilot.graph.state import ResearchState as WorkflowResearchState
 from damask_copilot.schemas.checker_report import CheckerReport
 from damask_copilot.schemas.research_goal import ResearchGoal
 from damask_copilot.schemas.research_state import ResearchState
@@ -22,3 +23,18 @@ def test_research_state_accepts_nested_models():
     )
     assert state.goal.material_system == "fcc_al"
     assert state.checker_report.ok is True
+
+
+def test_v1_research_state_initializes_with_user_goal():
+    state = WorkflowResearchState(user_goal="Calibrate Ni3Al DAMASK model")
+    assert state.user_goal == "Calibrate Ni3Al DAMASK model"
+
+
+def test_v1_research_state_defaults_iteration_to_zero():
+    state = WorkflowResearchState(user_goal="Run a DAMASK smoke test")
+    assert state.iteration == 0
+
+
+def test_v1_research_state_has_safe_default_max_iterations():
+    state = WorkflowResearchState(user_goal="Run a DAMASK smoke test")
+    assert state.max_iterations == 3

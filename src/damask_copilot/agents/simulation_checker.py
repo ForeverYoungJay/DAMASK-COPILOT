@@ -1,9 +1,10 @@
-"""Simulation checker agent."""
+"""Deprecated simulation-checker micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.agents.base import BaseAgent
 from damask_copilot.mcp_clients.damask_preprocess_client import DAMASKPreprocessClient
 from damask_copilot.policies.safety_policy import enforce_basic_safety
@@ -13,13 +14,17 @@ from damask_copilot.schemas.research_state import ResearchState
 
 
 class SimulationCheckerAgent(BaseAgent):
-    """Validate the plan, material card, and generated dry-run input files."""
+    """Deprecated wrapper for deterministic validation.
+
+    The unified v1 architecture uses `damask_copilot.tools.validation`.
+    """
 
     name = "checker"
     max_auto_cells = 16 * 16 * 16
     max_auto_grains = 20
 
     def __init__(self, preprocess_client: DAMASKPreprocessClient | None = None) -> None:
+        warn_legacy_agent(legacy_name="SimulationCheckerAgent", replacement="damask_copilot.tools.validation")
         self.preprocess_client = preprocess_client or DAMASKPreprocessClient()
 
     def run(self, state: ResearchState) -> ResearchState:

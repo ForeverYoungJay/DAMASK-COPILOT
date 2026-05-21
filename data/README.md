@@ -9,9 +9,19 @@ data/
   materials/
     index.yaml
     <material_id>_demo.yaml
+```
 
-  experimental/
-    <material_id>/
+Project-specific literature and experiment files now live under:
+
+```text
+projects/
+  <project_name>/
+    literature/
+      pdf/
+      notes/
+      bibliographies/
+      source_lists/
+    experimental/
       raw/
       processed/
       metadata/
@@ -19,37 +29,25 @@ data/
         raw/
         processed/
         metadata/
-
-  literature/
-    <material_id>/
-      pdf/
-      notes/
-      bibliographies/
-      source_lists/
-      <case_name>/
-        pdf/
-        notes/
-        bibliographies/
-        source_lists/
 ```
 
 Guidelines:
 
 - `materials/`
-  - Store internal parameter cards and material templates used by `ParameterAgent`.
-- `experimental/<material_id>/raw/`
+  - Store internal demo parameter cards and material templates only.
+- `projects/<project_name>/experimental/raw/`
   - Store original CSV/XLSX/TXT/JSON/YAML data files.
-- `experimental/<material_id>/processed/`
+- `projects/<project_name>/experimental/processed/`
   - Store cleaned or unit-normalized datasets used for alignment.
-- `experimental/<material_id>/metadata/`
+- `projects/<project_name>/experimental/metadata/`
   - Store README files, units notes, specimen information, and test conditions.
-- `literature/<material_id>/pdf/`
+- `projects/<project_name>/literature/pdf/`
   - Store downloaded papers for manual review.
-- `literature/<material_id>/notes/`
+- `projects/<project_name>/literature/notes/`
   - Store reading notes, summaries, and extraction memos.
-- `literature/<material_id>/bibliographies/`
+- `projects/<project_name>/literature/bibliographies/`
   - Store `.bib`, RIS, or citation exports.
-- `literature/<material_id>/source_lists/`
+- `projects/<project_name>/literature/source_lists/`
   - Store DOI lists, URL lists, and arXiv ids that can be fed into the CLI.
 
 Current system behavior:
@@ -65,7 +63,8 @@ Example:
 damask-copilot materials run "Study Ni3Al L12 cold rolling anisotropy" \
   --dry-run \
   --llm \
-  --experimental-file data/experimental/ni3al_l12/raw/cold_rolling_curve.csv \
-  --user-file data/literature/ni3al_l12/notes/reading_notes.md \
+  --project-name ni3al_l12 \
+  --experimental-file projects/ni3al_l12/experimental/cold_rolling_anisotropy/raw/cold_rolling_curve.csv \
+  --user-file projects/ni3al_l12/literature/cold_rolling_anisotropy/notes/reading_notes.md \
   --literature-source "doi:10.xxxx/xxxx"
 ```

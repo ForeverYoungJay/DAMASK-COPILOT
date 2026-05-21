@@ -1,4 +1,4 @@
-"""Experimental data summarization agent."""
+"""Deprecated experimental-data micro-agent retained for compatibility wrappers."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any
 
 import yaml
 
+from damask_copilot.agents._deprecation import warn_legacy_agent
 from damask_copilot.graph.materials_research_state import MaterialsResearchState, append_trace
 from damask_copilot.llm.prompts import load_prompt
 from damask_copilot.llm.structured_runner import StructuredLLMRunner
@@ -16,7 +17,10 @@ from damask_copilot.schemas.llm_outputs import ExperimentalDataInterpretationOut
 
 
 class ExperimentalDataAgent:
-    """Read user-provided experimental files and summarize their structure."""
+    """Deprecated wrapper for experimental-data summarization.
+
+    The unified v1 architecture uses `ScientificKnowledgeAgent` instead.
+    """
 
     name = "experimental_data_agent"
 
@@ -27,6 +31,7 @@ class ExperimentalDataAgent:
         model_name: str | None = None,
         llm_runner: StructuredLLMRunner | None = None,
     ) -> None:
+        warn_legacy_agent(legacy_name="ExperimentalDataAgent", replacement="ScientificKnowledgeAgent")
         self.use_llm = use_llm
         self.model_name = model_name
         self.llm_runner = llm_runner
